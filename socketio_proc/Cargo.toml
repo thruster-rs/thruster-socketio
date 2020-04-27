@@ -1,0 +1,20 @@
+[package]
+name = "thruster-socketio-proc"
+version = "0.1.0"
+authors = ["Pete Mertz <peter.s.mertz@gmail.com>"]
+description = "The proc macros behind the thruster web framework"
+readme = "README.md"
+license = "MIT"
+keywords = ["thruster", "router", "fast", "http", "hyper"]
+documentation = "https://docs.rs/thruster"
+homepage = "https://thruster.pete.pm"
+repository = "https://github.com/trezm/thruster"
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "0.4.27"
+syn = { version = "0.15.27", features = ["full"] }
+quote = "0.6.3"

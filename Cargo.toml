@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "socketio_middleware",
+    "socketio_proc",
+]
