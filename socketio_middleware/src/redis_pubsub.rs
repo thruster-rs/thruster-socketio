@@ -1,6 +1,6 @@
-use redis::RedisResult;
+use trezm_redis::RedisResult;
 use futures_util::StreamExt;
-use redis::AsyncCommands;
+use trezm_redis::AsyncCommands;
 use tokio;
 use crossbeam::channel::{unbounded, Sender};
 use std::sync::RwLock;
@@ -76,7 +76,7 @@ pub async fn connect_to_pubsub(redis_host: &str, channel_name: &str) -> RedisRes
   let redis_host = redis_host.to_string();
   let channel_name = channel_name.to_string();
 
-  let client = redis::Client::open(redis_host).unwrap();
+  let client = trezm_redis::Client::open(redis_host).unwrap();
   let mut publish_conn = client.get_async_connection().await?;
 
   let (sender, receiver) = unbounded();
