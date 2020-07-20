@@ -15,6 +15,10 @@ use tokio_tungstenite::WebSocketStream;
 use log::info;
 
 use crate::rooms::{get_sockets_for_room, join_channel_to_room, remove_socket_from_room, ChannelPair};
+use crate::socketio_message::SocketIOMessage;
+
+pub type SocketIOHandler =
+    fn(SocketIOSocket, String) -> Pin<Box<dyn Future<Output = Result<(), ()>> + Send>>;
 
 pub const SOCKETIO_PING: &'static str = "2";
 pub const SOCKETIO_PONG: &'static str = "3";
@@ -61,17 +65,6 @@ pub trait SocketIOAdapter: Send + Sync {
 pub enum InternalMessage {
     IO(SocketIOMessage),
     WS(WSSocketMessage),
-}
-
-#[derive(Clone)]
-pub enum SocketIOMessage {
-    Message(String, String), // Event, Message
-    SendMessage(String, String),
-    Join(String),
-    Leave(String),
-    AddListener(String, SocketIOHandler),
-    Pong,
-    WsPong,
 }
 
 #[derive(Clone)]
@@ -219,28 +212,11 @@ impl SocketIOSocket {
     }
 }
 
-pub type SocketIOHandler =
-    fn(SocketIOSocket, String) -> Pin<Box<dyn Future<Output = Result<(), ()>> + Send>>;
-
 impl fmt::Display for InternalMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             InternalMessage::IO(v) => write!(f, "Message::IO({})", v),
             InternalMessage::WS(v) => write!(f, "Message::WS({})", v),
-        }
-    }
-}
-
-impl fmt::Display for SocketIOMessage {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            SocketIOMessage::Message(event, message) => write!(f, "SocketIOMessage::Message({}, {})", event, message),
-            SocketIOMessage::SendMessage(event, message) => write!(f, "SocketIOMessage::SendMessage({}, {})", event, message),
-            SocketIOMessage::Join(val) => write!(f, "SocketIOMessage::Join({})", val),
-            SocketIOMessage::Leave(val) => write!(f, "SocketIOMessage::Leave({})", val),
-            SocketIOMessage::AddListener(val, _handler) => write!(f, "AddListener({})", val),
-            SocketIOMessage::Pong => write!(f, "SocketIOMessage::Pong"),
-            SocketIOMessage::WsPong => write!(f, "SocketIOMessage::WsPong"),
         }
     }
 }
