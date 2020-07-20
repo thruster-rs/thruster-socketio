@@ -10,6 +10,8 @@ mod rooms;
 mod sid;
 mod socketio;
 mod socketio_upgrade;
+mod socketio_parser;
+mod socketio_message;
 pub mod redis_pubsub;
 
 pub use socketio::{

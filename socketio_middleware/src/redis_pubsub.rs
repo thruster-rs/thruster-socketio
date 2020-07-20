@@ -6,7 +6,8 @@ use crossbeam::channel::{unbounded, Sender};
 use std::sync::RwLock;
 use log::{info, error};
 
-use crate::socketio::{SocketIOAdapter, SocketIOMessage, InternalMessage};
+use crate::socketio_message::{SocketIOMessage};
+use crate::socketio::{SocketIOAdapter, InternalMessage};
 use crate::rooms::get_sockets_for_room;
 use crate::sid::generate_sid;
 
