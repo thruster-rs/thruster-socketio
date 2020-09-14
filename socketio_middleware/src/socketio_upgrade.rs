@@ -6,19 +6,16 @@ use futures_util::stream::StreamExt;
 use std::boxed::Box;
 use std::future::Future;
 use std::pin::Pin;
-use thruster::context::hyper_request::HyperRequest;
-use thruster::context::basic_hyper_context::{BasicHyperContext as Ctx};
 use thruster::{Context, MiddlewareResult};
 use tokio;
 use tokio_tungstenite::tungstenite::Message;
 
-use crate::socketio::{
-    SocketIOSocket, SocketIOWrapper as SocketIO, SOCKETIO_EVENT_OPEN,
-    SOCKETIO_PING,
-    WSSocketMessage,
-    InternalMessage,
-};
 use crate::sid::generate_sid;
+use crate::socketio::{
+    InternalMessage, SocketIOSocket, SocketIOWrapper as SocketIO, WSSocketMessage,
+    SOCKETIO_EVENT_OPEN, SOCKETIO_PING,
+};
+use crate::socketio_context::SocketIOContext;
 
 const WEBSOCKET_SEC: &'static str = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
@@ -38,11 +35,11 @@ struct HandshakeResponse {
     data: HandshakeResponseData,
 }
 
-pub async fn handle_io(
-    mut context: Ctx,
+pub async fn handle_io<T: Context + SocketIOContext + Default>(
+    mut context: T,
     handler: fn(SocketIOSocket) -> Pin<Box<dyn Future<Output = Result<SocketIOSocket, ()>> + Send>>,
-) -> MiddlewareResult<Ctx> {
-    let request = context.hyper_request.unwrap().request;
+) -> MiddlewareResult<T> {
+    let request = context.into_request();
 
     // Theoretically should check this and the transport query param
     if request.headers().contains_key(hyper::header::UPGRADE) {
@@ -59,7 +56,7 @@ pub async fn handle_io(
         hasher.result(&mut accept_buffer);
         let accept_value = base64::encode(&accept_buffer);
 
-        context = Ctx::default();
+        context = T::default();
         context.status(101);
         context.set("upgrade", "websocket");
         context.set("Sec-WebSocket-Accept", &accept_value);
@@ -103,11 +100,7 @@ pub async fn handle_io(
                 socket_wrapper.listen().await;
             });
 
-            let socket = SocketIOSocket::new(
-                sid.clone(),
-                sender.clone(),
-                receiver.clone(),
-            );
+            let socket = SocketIOSocket::new(sid.clone(), sender.clone(), receiver.clone());
             let _ = (handler)(socket)
                 .await
                 .expect("The handler should return a socket");
@@ -123,7 +116,9 @@ pub async fn handle_io(
                                 let _ = sender.send(InternalMessage::WS(WSSocketMessage::Ping));
                             }
                             val => {
-                                let _ = sender.send(InternalMessage::WS(WSSocketMessage::RawMessage(val.to_string())));
+                                let _ = sender.send(InternalMessage::WS(
+                                    WSSocketMessage::RawMessage(val.to_string()),
+                                ));
                             }
                         };
                     }
@@ -142,7 +137,7 @@ pub async fn handle_io(
                     }
                     Some(Ok(Message::Close(_e))) => {
                         break;
-                    },
+                    }
                     None => {
                         break;
                     }
@@ -167,7 +162,7 @@ pub async fn handle_io(
 
         let encoded = format!("{}:0'{}'2:40", body.len(), body);
 
-        context = Ctx::new(HyperRequest::default());
+        context = T::default();
         context.set_body(encoded.as_bytes().to_vec());
 
         Ok(context)
