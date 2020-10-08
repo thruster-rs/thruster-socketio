@@ -1,5 +1,8 @@
-use crossbeam::channel::unbounded;
-use crossbeam::channel::{Receiver, Sender};
+// use crossbeam::channel::unbounded;
+// use crossbeam::channel::{Receiver, Sender};
+use tokio::sync::broadcast::channel as unbounded;
+use tokio::sync::broadcast::{Receiver, Sender};
+
 use futures::stream::FuturesUnordered;
 use futures_util::sink::SinkExt;
 use futures_util::stream::SplitSink;
@@ -80,7 +83,6 @@ pub enum WSSocketMessage {
 pub struct SocketIOSocket {
     id: String,
     sender: Sender<InternalMessage>,
-    receiver: Receiver<InternalMessage>,
     rooms: Vec<String>,
 }
 
@@ -89,22 +91,16 @@ impl Clone for SocketIOSocket {
         SocketIOSocket {
             id: self.id.clone(),
             sender: self.sender.clone(),
-            receiver: self.receiver.clone(),
             rooms: self.rooms.clone(),
         }
     }
 }
 
 impl SocketIOSocket {
-    pub fn new(
-        id: String,
-        sender: Sender<InternalMessage>,
-        receiver: Receiver<InternalMessage>,
-    ) -> Self {
+    pub fn new(id: String, sender: Sender<InternalMessage>) -> Self {
         SocketIOSocket {
             id,
             sender,
-            receiver,
             rooms: Vec::new(),
         }
     }
@@ -264,7 +260,7 @@ impl SocketIOWrapper {
         sid: String,
         socket: SplitSink<WebSocketStream<hyper::upgrade::Upgraded>, Message>,
     ) -> Self {
-        let (sender, receiver) = unbounded();
+        let (sender, receiver) = unbounded(16);
         SocketIOWrapper {
             sid,
             message_number: 0,
@@ -301,7 +297,6 @@ impl SocketIOWrapper {
                                     SocketIOSocket {
                                         id: self.sid.clone(),
                                         sender: self.sender.clone(),
-                                        receiver: self.receiver.clone(),
                                         rooms: self.rooms.clone(),
                                     },
                                     message.clone(),
@@ -309,9 +304,6 @@ impl SocketIOWrapper {
                             }
 
                             let _ = unordered_future.collect::<Result<(), ()>>().await;
-
-                            // For some reason we need to kick the executor? Wtf?
-                            tokio::spawn(async {});
                         }
                         None => (), // Ignore
                     }
@@ -325,7 +317,7 @@ impl SocketIOWrapper {
     }
 
     pub async fn listen(mut self) {
-        while let Ok(val) = self.receiver.recv() {
+        while let Ok(val) = self.receiver.recv().await {
             match val {
                 InternalMessage::IO(val) => {
                     match val {
@@ -400,9 +392,5 @@ impl SocketIOWrapper {
 
     pub fn sender(&self) -> Sender<InternalMessage> {
         self.sender.clone()
-    }
-
-    pub fn receiver(&self) -> Receiver<InternalMessage> {
-        self.receiver.clone()
     }
 }

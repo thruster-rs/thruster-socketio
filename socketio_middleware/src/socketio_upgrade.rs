@@ -94,13 +94,12 @@ pub async fn handle_io<T: Context + SocketIOContext + Default>(
             let mut msg_fut = ws_receiver.next();
             let socket_wrapper = SocketIO::new(sid.clone(), ws_sender);
             let sender = socket_wrapper.sender();
-            let receiver = socket_wrapper.receiver();
 
             tokio::spawn(async move {
                 socket_wrapper.listen().await;
             });
 
-            let socket = SocketIOSocket::new(sid.clone(), sender.clone(), receiver.clone());
+            let socket = SocketIOSocket::new(sid.clone(), sender.clone());
             let _ = (handler)(socket)
                 .await
                 .expect("The handler should return a socket");
