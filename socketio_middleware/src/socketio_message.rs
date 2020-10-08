@@ -1,7 +1,7 @@
 use crate::socketio::SocketIOHandler;
 use std::fmt;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum SocketIOMessage {
     Message(String, String), // Event, Message
     SendMessage(String, String),

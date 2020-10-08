@@ -3,18 +3,20 @@ use crossbeam::channel::{Receiver, Sender};
 use futures::stream::FuturesUnordered;
 use futures_util::sink::SinkExt;
 use futures_util::stream::SplitSink;
+use log::info;
 use std::boxed::Box;
 use std::collections::HashMap;
+use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
-use std::fmt;
 use std::sync::RwLock;
 use tokio::stream::StreamExt;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::WebSocketStream;
-use log::info;
 
-use crate::rooms::{get_sockets_for_room, join_channel_to_room, remove_socket_from_room, ChannelPair};
+use crate::rooms::{
+    get_sockets_for_room, join_channel_to_room, remove_socket_from_room, ChannelPair,
+};
 use crate::socketio_message::SocketIOMessage;
 
 pub type SocketIOHandler =
@@ -36,9 +38,9 @@ pub fn adapter(new_adapter: impl SocketIOAdapter + 'static) {
 
 pub fn parse_raw_message(payload: &str) -> (String, String) {
     let message = &payload[2..];
-    let leading_bracket = message.find("[").unwrap_or_else(|| {
-        panic!("Found a message with no leading bracket: '{}'", message)
-    });
+    let leading_bracket = message
+        .find("[")
+        .unwrap_or_else(|| panic!("Found a message with no leading bracket: '{}'", message));
     let event_split = message.find(",").unwrap_or_else(|| {
         panic!(
             "Received a message without a comma separator: '{}'",
@@ -61,13 +63,13 @@ pub trait SocketIOAdapter: Send + Sync {
     fn outgoing(&self, room_id: &str, message: &SocketIOMessage);
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum InternalMessage {
     IO(SocketIOMessage),
     WS(WSSocketMessage),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum WSSocketMessage {
     RawMessage(String),
     Close,
@@ -79,7 +81,7 @@ pub struct SocketIOSocket {
     id: String,
     sender: Sender<InternalMessage>,
     receiver: Receiver<InternalMessage>,
-    rooms: Vec<String>
+    rooms: Vec<String>,
 }
 
 impl Clone for SocketIOSocket {
@@ -103,7 +105,7 @@ impl SocketIOSocket {
             id,
             sender,
             receiver,
-            rooms: Vec::new()
+            rooms: Vec::new(),
         }
     }
     ///
@@ -124,8 +126,12 @@ impl SocketIOSocket {
     /// on adds a listener for a particular event
     ///
     pub fn on(&mut self, event: &str, handler: SocketIOHandler) {
-        let _ = self.sender
-            .send(InternalMessage::IO(SocketIOMessage::AddListener(event.to_string(), handler)));
+        let _ = self
+            .sender
+            .send(InternalMessage::IO(SocketIOMessage::AddListener(
+                event.to_string(),
+                handler,
+            )));
     }
 
     ///
@@ -133,7 +139,9 @@ impl SocketIOSocket {
     /// by that socket go to the room rather than globally.
     ///
     pub async fn join(&mut self, room_id: &str) {
-        let _ = self.sender.send(InternalMessage::IO(SocketIOMessage::Join(room_id.to_string())));
+        let _ = self.sender.send(InternalMessage::IO(SocketIOMessage::Join(
+            room_id.to_string(),
+        )));
     }
 
     ///
@@ -142,16 +150,21 @@ impl SocketIOSocket {
     /// in a noop.
     ///
     pub async fn leave(&mut self, room_id: &str) {
-        let _ = self.sender
-            .send(InternalMessage::IO(SocketIOMessage::Leave(room_id.to_string())));
+        let _ = self.sender.send(InternalMessage::IO(SocketIOMessage::Leave(
+            room_id.to_string(),
+        )));
     }
 
     ///
     /// send sends a message to this socket
     ///
     pub async fn send(&self, event: &str, message: &str) {
-        let _ = self.sender
-            .send(InternalMessage::IO(SocketIOMessage::SendMessage(event.to_string(), message.to_string())));
+        let _ = self
+            .sender
+            .send(InternalMessage::IO(SocketIOMessage::SendMessage(
+                event.to_string(),
+                message.to_string(),
+            )));
     }
 
     ///
@@ -161,8 +174,10 @@ impl SocketIOSocket {
     pub async fn emit_to(&self, room_id: &str, event: &str, message: &str) {
         // Send out via adapter
         if let Some(adapter) = &*ADAPTER.read().unwrap() {
-            adapter.incoming(room_id,
-                &SocketIOMessage::SendMessage(event.to_string(), message.to_string()));
+            adapter.incoming(
+                room_id,
+                &SocketIOMessage::SendMessage(event.to_string(), message.to_string()),
+            );
         }
 
         match get_sockets_for_room(room_id) {
@@ -173,8 +188,8 @@ impl SocketIOSocket {
                         message.to_string(),
                     )));
                 }
-            },
-            None => ()
+            }
+            None => (),
         }
     }
 
@@ -185,8 +200,10 @@ impl SocketIOSocket {
     pub async fn broadcast_to(&self, room_id: &str, event: &str, message: &str) {
         // Send out via adapter
         if let Some(adapter) = &*ADAPTER.read().unwrap() {
-            adapter.incoming(room_id,
-                &SocketIOMessage::SendMessage(event.to_string(), message.to_string()));
+            adapter.incoming(
+                room_id,
+                &SocketIOMessage::SendMessage(event.to_string(), message.to_string()),
+            );
         }
 
         match get_sockets_for_room(room_id) {
@@ -199,12 +216,12 @@ impl SocketIOSocket {
                         )));
                     }
                 }
-            },
-            None => ()
+            }
+            None => (),
         }
     }
 
-        ///
+    ///
     /// rooms returns all of the rooms this socket is currently in
     ///
     pub fn rooms(&self) -> &Vec<String> {
@@ -292,8 +309,11 @@ impl SocketIOWrapper {
                             }
 
                             let _ = unordered_future.collect::<Result<(), ()>>().await;
+
+                            // For some reason we need to kick the executor? Wtf?
+                            tokio::spawn(async {});
                         }
-                        None => () // Ignore
+                        None => (), // Ignore
                     }
                 }
             }
@@ -323,14 +343,14 @@ impl SocketIOWrapper {
                                 SOCKETIO_EVENT_MESSAGE, self.message_number, event, message
                             );
 
-                            let _ = self
-                                .socket
-                                .send(Message::Text(content))
-                                .await;
+                            let _ = self.socket.send(Message::Text(content)).await;
                         }
                         SocketIOMessage::Join(room_id) => {
                             self.rooms.push(room_id.to_string());
-                            join_channel_to_room(&room_id, ChannelPair::new(&self.sid, self.sender()));
+                            join_channel_to_room(
+                                &room_id,
+                                ChannelPair::new(&self.sid, self.sender()),
+                            );
                         }
                         SocketIOMessage::Leave(room_id) => {
                             let mut i = 0;
@@ -357,25 +377,23 @@ impl SocketIOWrapper {
                         }
                         _ => (),
                     }
-                },
-                InternalMessage::WS(val) => {
-                    match val {
-                        WSSocketMessage::RawMessage(message) => self.handle(message).await,
-                        WSSocketMessage::Ping => {
-                            let _ = self
-                                .socket
-                                .send(Message::Text(SOCKETIO_PONG.to_string()))
-                                .await;
-                        }
-                        WSSocketMessage::WsPing => {
-                            let _ = self.socket.send(Message::Pong([].to_vec())).await;
-                        }
-                        WSSocketMessage::Close => {
-                            self.close().await;
-                            return
-                        }
-                    }
                 }
+                InternalMessage::WS(val) => match val {
+                    WSSocketMessage::RawMessage(message) => self.handle(message).await,
+                    WSSocketMessage::Ping => {
+                        let _ = self
+                            .socket
+                            .send(Message::Text(SOCKETIO_PONG.to_string()))
+                            .await;
+                    }
+                    WSSocketMessage::WsPing => {
+                        let _ = self.socket.send(Message::Pong([].to_vec())).await;
+                    }
+                    WSSocketMessage::Close => {
+                        self.close().await;
+                        return;
+                    }
+                },
             }
         }
     }
