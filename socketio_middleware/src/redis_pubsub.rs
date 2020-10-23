@@ -1,11 +1,10 @@
 use futures_util::StreamExt;
-use log::{error, info};
+use log::{debug, error};
 use std::sync::RwLock;
 use tokio;
 use trezm_redis::AsyncCommands;
 use trezm_redis::RedisResult;
 
-// use crossbeam::channel::{unbounded, Sender};
 use tokio::sync::broadcast::channel as unbounded;
 use tokio::sync::broadcast::Sender;
 
@@ -99,7 +98,7 @@ pub async fn connect_to_pubsub(redis_host: &str, channel_name: &str) -> RedisRes
     // Handle pubbing local requests into redis
     tokio::spawn(async move {
         while let Ok(val) = receiver.recv().await {
-            info!("local -> redis: {} {}", val.room_id, val.socket_io_message);
+            debug!("local -> redis: {} {}", val.room_id, val.socket_io_message);
 
             match val.socket_io_message {
                 SocketIOMessage::SendMessage(event, message) => {
@@ -148,7 +147,7 @@ pub async fn connect_to_pubsub(redis_host: &str, channel_name: &str) -> RedisRes
             let message: RedisMessage =
                 serde_json::from_str(&msg.get_payload::<String>().unwrap()).unwrap();
 
-            info!(
+            debug!(
                 "redis -> local: {} {} {}",
                 message.room_id, message.event, message.message
             );
