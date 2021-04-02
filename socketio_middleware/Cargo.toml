@@ -1,6 +1,6 @@
 [package]
 name = "thruster-socketio"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Pete Mertz <peter.s.mertz@gmail.com>"]
 description = "A SocketIO layer built on Thruster"
 readme = "README.md"

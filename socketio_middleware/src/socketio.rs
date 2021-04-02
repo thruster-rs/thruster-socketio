@@ -312,6 +312,9 @@ impl SocketIOWrapper {
             "41" => {
                 info!("{}: Socket closed", self.sid);
             }
+            "40" => {
+                info!("{}: Socket opened", self.sid);
+            }
             _ => panic!("Attempted to handle a non-message payload: '{}'", payload),
         }
     }
