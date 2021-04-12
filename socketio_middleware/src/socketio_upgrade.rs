@@ -144,21 +144,27 @@ pub async fn handle_io<T: Context + SocketIOContext + Default>(
                 socket_wrapper.listen().await;
             });
 
-            // Keepalive
-            let keepalive_sender = sender.clone();
-            tokio::spawn(async move {
-                let mut interval = time::interval(Duration::from_millis(25000));
+            // Keepalive in v4 is the server's responsibility.
+            match version {
+                AllowedVersions::V4 => {
+                    let keepalive_sender = sender.clone();
+                    tokio::spawn(async move {
+                        let mut interval = time::interval(Duration::from_millis(25000));
 
-                loop {
-                    interval.tick().await;
+                        loop {
+                            interval.tick().await;
 
-                    let res = keepalive_sender.send(InternalMessage::WS(WSSocketMessage::Pong));
+                            let res =
+                                keepalive_sender.send(InternalMessage::WS(WSSocketMessage::Pong));
 
-                    if res.is_err() {
-                        break;
-                    }
+                            if res.is_err() {
+                                break;
+                            }
+                        }
+                    });
                 }
-            });
+                _ => (),
+            };
 
             let socket = SocketIOSocket::new(sid.clone(), sender.clone());
             let _ = (handler)(socket)
