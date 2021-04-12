@@ -4,10 +4,12 @@ use crypto::digest::Digest;
 use futures_util::sink::SinkExt;
 use futures_util::stream::StreamExt;
 use std::boxed::Box;
+use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use thruster::{Context, MiddlewareResult};
 use tokio;
+use tokio::time::{self, Duration};
 use tokio_tungstenite::tungstenite::Message;
 
 use crate::sid::generate_sid;
@@ -35,10 +37,38 @@ struct HandshakeResponse {
     data: HandshakeResponseData,
 }
 
+enum AllowedVersions {
+    V3,
+    V4,
+}
+
 pub async fn handle_io<T: Context + SocketIOContext + Default>(
     mut context: T,
     handler: fn(SocketIOSocket) -> Pin<Box<dyn Future<Output = Result<SocketIOSocket, ()>> + Send>>,
 ) -> MiddlewareResult<T> {
+    let param_map = match context.route().split("?").collect::<Vec<&str>>().get(1) {
+        Some(val) => {
+            let mut map = HashMap::new();
+
+            for el in val.split("&") {
+                let mut split = el.split("=");
+
+                map.insert(
+                    split.next().unwrap_or_else(|| ""),
+                    split.next().unwrap_or_else(|| ""),
+                );
+            }
+
+            map
+        }
+        None => HashMap::new(),
+    };
+
+    let version = match param_map.get("EIO") {
+        Some(&"4") => AllowedVersions::V4,
+        _ => AllowedVersions::V3,
+    };
+
     let request = context.into_request();
 
     // Theoretically should check this and the transport query param
@@ -88,15 +118,46 @@ pub async fn handle_io<T: Context + SocketIOContext + Default>(
             // TODO(trezm): Handle errors here
             let _ = ws_sender.send(Message::Text(encoded_opener)).await;
             // TODO(trezm): Handle errors here
-            let _ = ws_sender
-                .send(Message::Text(SOCKETIO_EVENT_OPEN.to_string()))
-                .await;
+
+            match version {
+                AllowedVersions::V3 => {
+                    let _ = ws_sender
+                        .send(Message::Text(SOCKETIO_EVENT_OPEN.to_string()))
+                        .await;
+                }
+                AllowedVersions::V4 => {
+                    let _ = ws_sender
+                        .send(Message::Text(format!(
+                            "{}{{\"sid\":\"{}\"}}",
+                            SOCKETIO_EVENT_OPEN,
+                            sid.clone()
+                        )))
+                        .await;
+                }
+            }
+
             let mut msg_fut = ws_receiver.next();
             let socket_wrapper = SocketIO::new(sid.clone(), ws_sender);
             let sender = socket_wrapper.sender();
 
             tokio::spawn(async move {
                 socket_wrapper.listen().await;
+            });
+
+            // Keepalive
+            let keepalive_sender = sender.clone();
+            tokio::spawn(async move {
+                let mut interval = time::interval(Duration::from_millis(25000));
+
+                loop {
+                    interval.tick().await;
+
+                    let res = keepalive_sender.send(InternalMessage::WS(WSSocketMessage::Pong));
+
+                    if res.is_err() {
+                        break;
+                    }
+                }
             });
 
             let socket = SocketIOSocket::new(sid.clone(), sender.clone());
@@ -126,9 +187,10 @@ pub async fn handle_io<T: Context + SocketIOContext + Default>(
                     }
                     Some(Ok(Message::Ping(_))) => {
                         let _ = sender.send(InternalMessage::WS(WSSocketMessage::WsPing));
+                        break;
                     }
                     Some(Ok(Message::Pong(_))) => {
-                        // This is a server side application, and should not be pinging
+                        let _ = sender.send(InternalMessage::WS(WSSocketMessage::WsPong));
                         break;
                     }
                     Some(Err(_e)) => {
