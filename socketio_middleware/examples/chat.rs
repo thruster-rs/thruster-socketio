@@ -1,26 +1,21 @@
 use hyper::Body;
 use std::future::Future;
 use std::pin::Pin;
+use thruster::context::basic_hyper_context::{generate_context, BasicHyperContext as Ctx};
 use thruster::context::hyper_request::HyperRequest;
-use thruster::context::basic_hyper_context::{
-    generate_context, BasicHyperContext as Ctx,
-};
 use thruster::hyper_server::HyperServer;
 use thruster::middleware::cors::cors;
+use thruster::middleware::file::get_file;
 use thruster::{async_middleware, middleware_fn};
 use thruster::{App, ThrusterServer};
 use thruster::{MiddlewareNext, MiddlewareResult};
-use thruster::middleware::file::get_file;
 
-use thruster_socketio::{adapter, handle_io, socketio_handler, socketio_listener, SocketIO};
-use thruster_socketio::redis_pubsub::{
-    connect_to_pubsub,
-    RedisAdapter
-};
-use tokio;
 use dotenv::dotenv;
-use std::env;
 use env_logger;
+use std::env;
+use thruster_socketio::redis_pubsub::{connect_to_pubsub, RedisAdapter};
+use thruster_socketio::{adapter, handle_io, socketio_handler, socketio_listener, SocketIO};
+use tokio;
 
 #[middleware_fn]
 async fn noop(context: Ctx, _next: MiddlewareNext<Ctx>) -> MiddlewareResult<Ctx> {
@@ -81,8 +76,10 @@ async fn main() {
     let port = env::var("PORT").unwrap_or("4321".to_string());
 
     tokio::spawn(async {
-        let _ = connect_to_pubsub("redis://127.0.0.1/", "socketio-example").await.expect("Could not connect to redis :(");
-        adapter(RedisAdapter{});
+        let _ = connect_to_pubsub("redis://127.0.0.1/", "socketio-example")
+            .await
+            .expect("Could not connect to redis :(");
+        adapter(RedisAdapter {});
     });
 
     let mut app = App::<HyperRequest, Ctx, ()>::create(generate_context, ());
@@ -90,5 +87,7 @@ async fn main() {
     app.get("/socket.io/*", async_middleware!(Ctx, [io]));
     app.get("/", async_middleware!(Ctx, [index]));
     app.options("/socket.io/*", async_middleware!(Ctx, [noop]));
-    let _ = HyperServer::new(app).build(&host, port.parse::<u16>().unwrap()).await;
+    let _ = HyperServer::new(app)
+        .build(&host, port.parse::<u16>().unwrap())
+        .await;
 }

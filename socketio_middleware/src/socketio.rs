@@ -77,7 +77,9 @@ pub enum WSSocketMessage {
     RawMessage(String),
     Close,
     Ping,
+    Pong,
     WsPing,
+    WsPong,
 }
 
 pub struct SocketIOSocket {
@@ -239,7 +241,9 @@ impl fmt::Display for WSSocketMessage {
         match self {
             WSSocketMessage::RawMessage(val) => write!(f, "WSSocketMessage::RawMessage({})", val),
             WSSocketMessage::Ping => write!(f, "WSSocketMessage::Ping"),
+            WSSocketMessage::Pong => write!(f, "WSSocketMessage::Pong"),
             WSSocketMessage::WsPing => write!(f, "WSSocketMessage::WsPing"),
+            WSSocketMessage::WsPong => write!(f, "WSSocketMessage::WsPong"),
             WSSocketMessage::Close => write!(f, "WSSocketMessage::Close"),
         }
     }
@@ -280,7 +284,17 @@ impl SocketIOWrapper {
     /// Handle an incoming payload. This parses the string into the correct parts and calls
     /// self.handler on them
     ///
-    pub async fn handle(&self, payload: String) {
+    pub async fn handle(&mut self, payload: String) {
+        if payload == SOCKETIO_PING {
+            let _ = self.sender.send(InternalMessage::WS(WSSocketMessage::Pong));
+            return;
+        }
+
+        if payload == SOCKETIO_PONG {
+            // Probably should set a timer and send a ping, but really... eh?
+            return;
+        }
+
         match &payload[0..2] {
             "42" => {
                 if payload.len() > 0 {
@@ -381,8 +395,17 @@ impl SocketIOWrapper {
                             .send(Message::Text(SOCKETIO_PONG.to_string()))
                             .await;
                     }
+                    WSSocketMessage::Pong => {
+                        let _ = self
+                            .socket
+                            .send(Message::Text(SOCKETIO_PING.to_string()))
+                            .await;
+                    }
                     WSSocketMessage::WsPing => {
                         let _ = self.socket.send(Message::Pong([].to_vec())).await;
+                    }
+                    WSSocketMessage::WsPong => {
+                        let _ = self.socket.send(Message::Ping([].to_vec())).await;
                     }
                     WSSocketMessage::Close => {
                         self.close().await;
