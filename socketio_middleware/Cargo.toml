@@ -27,7 +27,7 @@ serde = "1.0.24"
 serde_json = "1.0.8"
 serde_derive = "1.0.24"
 thruster = { version = "1.0.0", features = ["hyper_server", "file"] }
-thruster-socketio-proc = "0.1.2"
+thruster-socketio-proc = "0.1.4"
 tokio = { version = "0.2", features = ["full"] }
 tokio-tungstenite = "0.10"
 
