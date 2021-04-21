@@ -317,17 +317,23 @@ impl SocketIOWrapper {
                                 ));
                             }
 
-                            let _ = unordered_future.collect::<Result<(), ()>>().await;
+                            // Dev note -- this must be spawned in a separate task, otherwise
+                            // it can block the receive loop and queue up too many transactions.
+                            tokio::spawn(async move {
+                                let _ = unordered_future.collect::<Result<(), ()>>().await;
+                            });
                         }
-                        None => (), // Ignore
+                        None => {
+                            info!("No handler found for message: {:#?}", event);
+                        } // Ignore
                     }
                 }
             }
             "41" => {
-                info!("{}: Socket closed", self.sid);
+                info!("{}: Socket closed...", self.sid);
             }
             "40" => {
-                info!("{}: Socket opened", self.sid);
+                info!("{}: Socket opened...", self.sid);
             }
             _ => panic!("Attempted to handle a non-message payload: '{}'", payload),
         }
