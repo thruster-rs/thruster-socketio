@@ -21,7 +21,7 @@ impl SocketIOContext for BasicHyperContext {
     }
 }
 
-impl<T> SocketIOContext for TypedHyperContext<T> {
+impl<T: 'static + Send + Sync> SocketIOContext for TypedHyperContext<T> {
     fn into_request(self) -> Request<Body> {
         self.hyper_request.unwrap().request
     }

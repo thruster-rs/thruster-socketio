@@ -105,7 +105,7 @@ pub async fn handle_io<T: Context + SocketIOContext + Default>(
 
         // Spawn a separate future to handle this connection
         tokio::spawn(async move {
-            let upgraded_req = request.into_body().on_upgrade().await.unwrap();
+            let upgraded_req = hyper::upgrade::on(request).await.unwrap();
 
             let ws_stream = tokio_tungstenite::WebSocketStream::from_raw_socket(
                 upgraded_req,
