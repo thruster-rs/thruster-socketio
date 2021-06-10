@@ -50,7 +50,7 @@ pub fn remove_socket_from_room(room_id: &str, _sid: &str) {
     };
 
     for i in 0..connected_sockets.len() - 1 {
-        let i = connected_sockets.len() - i;
+        let i = connected_sockets.len() - 1 - i;
         let socket = connected_sockets.get(i).unwrap();
 
         if socket.sid == room_id {
