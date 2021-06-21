@@ -48,12 +48,10 @@ pub async fn broadcast(room_id: &str, message: &str) {
     match get_sockets_for_room(room_id) {
         Some(channels) => {
             for channel in &*channels {
-                if channel.sid() != &self.id {
                     channel.send(InternalMessage::IO(SocketIOMessage::SendMessage(
                         "broadcast".to_string(),
                         message.to_string(),
                     )));
-                }
             }
         }
         None => (),
