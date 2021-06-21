@@ -34,6 +34,32 @@ lazy_static! {
     static ref ADAPTER: RwLock<Option<Box<dyn SocketIOAdapter>>> = RwLock::new(None);
 }
 
+pub async fn broadcast(room_id: &str, message: &str) {
+    /*
+    // Send out via adapter
+    if let Some(adapter) = &*ADAPTER.read().unwrap() {
+        adapter.incoming(
+            room_id,
+            &SocketIOMessage::SendMessage(event.to_string(), message.to_string()),
+        );
+    }
+    */
+
+    match get_sockets_for_room(room_id) {
+        Some(channels) => {
+            for channel in &*channels {
+                if channel.sid() != &self.id {
+                    channel.send(InternalMessage::IO(SocketIOMessage::SendMessage(
+                        "broadcast".to_string(),
+                        message.to_string(),
+                    )));
+                }
+            }
+        }
+        None => (),
+    }
+}
+
 pub fn adapter(new_adapter: impl SocketIOAdapter + 'static) {
     let mut adapter = ADAPTER.write().unwrap();
     adapter.replace(Box::new(new_adapter));
