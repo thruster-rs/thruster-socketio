@@ -15,6 +15,6 @@ mod socketio_message;
 // mod socketio_parser;
 mod socketio_upgrade;
 
-pub use socketio::{adapter, SocketIOAdapter, SocketIOSocket as SocketIO};
+pub use socketio::{adapter, SocketIOAdapter, SocketIOSocket as SocketIO, broadcast};
 pub use socketio_context::SocketIOContext;
 pub use socketio_upgrade::handle_io;
