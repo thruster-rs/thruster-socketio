@@ -34,6 +34,7 @@ lazy_static! {
     static ref ADAPTER: RwLock<Option<Box<dyn SocketIOAdapter>>> = RwLock::new(None);
 }
 
+//new function for broadcast to any rooms without socketio instance.
 pub async fn broadcast(room_id: &str, event: &str, message: &str) {
     // Send out via adapter
     if let Some(adapter) = &*ADAPTER.read().unwrap() {
