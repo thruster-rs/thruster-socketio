@@ -35,7 +35,6 @@ lazy_static! {
 }
 
 pub async fn broadcast(room_id: &str, event: &str, message: &str) {
-    /*
     // Send out via adapter
     if let Some(adapter) = &*ADAPTER.read().unwrap() {
         adapter.incoming(
@@ -43,7 +42,6 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
             &SocketIOMessage::SendMessage(event.to_string(), message.to_string()),
         );
     }
-    */
 
     match get_sockets_for_room(room_id) {
         Some(channels) => {
