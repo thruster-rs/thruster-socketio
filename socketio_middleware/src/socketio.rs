@@ -439,10 +439,10 @@ impl SocketIOWrapper {
                         let _ = self.socket.send(Message::Ping([].to_vec())).await;
                     }
                     WSSocketMessage::Close => {
-                        /// remove this socket from all releated rooms
+                        /// remove the socket from all joined rooms
                         info!("{}: Received Socket closed...", self.sid);
                         for room in &self.rooms {
-                            debug!("remove socket {} from room {}.", self.sid, room);
+                            debug!("Remove socket {} from room {}.", self.sid, room);
                             remove_socket_from_room(&room, &self.sid);
                         }
 
