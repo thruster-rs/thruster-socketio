@@ -6,7 +6,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use futures::stream::FuturesUnordered;
 use futures_util::sink::SinkExt;
 use futures_util::stream::SplitSink;
-use log::info;
+use log::{info, debug};
 use std::boxed::Box;
 use std::collections::HashMap;
 use std::fmt;
