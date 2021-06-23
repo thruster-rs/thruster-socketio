@@ -442,7 +442,7 @@ impl SocketIOWrapper {
                         /// remove this socket from all releated rooms
                         info!("{}: Received Socket closed...", self.sid);
                         for room in &self.rooms {
-                            debug!("remove socket {} from room {}.", room, self.sid);
+                            debug!("remove socket {} from room {}.", self.sid, room);
                             remove_socket_from_room(&room, &self.sid);
                         }
 
