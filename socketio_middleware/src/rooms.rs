@@ -65,3 +65,14 @@ pub fn remove_socket_from_room(room_id: &str, _sid: &str) {
 pub fn get_sockets_for_room(room_id: &str) -> Option<ReadGuard<String, Vec<ChannelPair>>> {
     ROOMS.get(room_id)
 }
+
+pub fn sockets_number(room_id: &str) -> usize {
+    match get_sockets_for_room(&room) {
+        Some(channels) => {
+            return channels.len();
+        }
+        None => (),
+    }
+
+    0
+}
