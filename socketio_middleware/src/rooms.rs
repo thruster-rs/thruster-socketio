@@ -67,7 +67,7 @@ pub fn get_sockets_for_room(room_id: &str) -> Option<ReadGuard<String, Vec<Chann
 }
 
 pub fn sockets_number(room_id: &str) -> usize {
-    match get_sockets_for_room(&room) {
+    match get_sockets_for_room(&room_id) {
         Some(channels) => {
             return channels.len();
         }
