@@ -439,8 +439,8 @@ impl SocketIOWrapper {
                         let _ = self.socket.send(Message::Ping([].to_vec())).await;
                     }
                     WSSocketMessage::Close => {
-                        self.close().await;
                         info!("{}: Received Socket closed...", self.sid);
+                        self.close().await;
                         return;
                     }
                 },
