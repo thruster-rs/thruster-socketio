@@ -7,7 +7,7 @@ extern crate log;
 pub use thruster_socketio_proc::*;
 
 pub mod redis_pubsub;
-mod rooms;
+pub mod rooms;
 mod sid;
 mod socketio;
 mod socketio_context;
@@ -18,4 +18,3 @@ mod socketio_upgrade;
 pub use socketio::{adapter, SocketIOAdapter, SocketIOSocket as SocketIO, broadcast};
 pub use socketio_context::SocketIOContext;
 pub use socketio_upgrade::handle_io;
-pub use rooms::get_sockets_for_room;
