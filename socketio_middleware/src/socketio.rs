@@ -438,6 +438,7 @@ impl SocketIOWrapper {
                     }
                     WSSocketMessage::Close => {
                         self.close().await;
+                        info!("{}: Received Socket closed...", self.sid);
                         return;
                     }
                 },
