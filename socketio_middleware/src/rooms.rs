@@ -35,6 +35,7 @@ impl ChannelPair {
 }
 
 pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
+    //TODO: why use remove, it is low performance.
     let mut connected_sockets = match ROOMS.remove(room_id) {
         Some(val) => val,
         None => Vec::new(),
@@ -44,7 +45,7 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     let mut exist: bool = false;
     for socket in &connected_sockets {
         if socket.sid() == channel_pair.sid() {
-            debug!("Join channel to room {}, socket_id({}) is exist.", room_id, socket.sid());
+            debug!("Join socket to room {}, socket_id({}) is exist.", room_id, socket.sid());
             exist = true;
             break;
         }
@@ -84,12 +85,26 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
 }
 */
 
-pub fn remove_socket_from_room(room_id: &str, _sid: &str) {
+pub fn remove_socket_from_room(room_id: &str, sid: &str) {
     let mut connected_sockets = match ROOMS.remove(room_id) {
         Some(val) => val,
         None => Vec::new(),
     };
 
+    //check if socketid exist
+    let mut i = 0;
+    for socket in &connected_sockets {
+        i += 1;
+        if socket.sid() == sid {
+            debug!("Leave socket {} from room {}.", socket.sid(), room_id);
+            connected_sockets.remove(i);
+            break;
+        }
+    }
+
+    ROOMS.insert(room_id.to_string(), connected_sockets);
+
+    /*
     for i in 0..connected_sockets.len() - 1 {
         let i = connected_sockets.len() - 1 - i;
         let socket = connected_sockets.get(i).unwrap();
@@ -101,7 +116,9 @@ pub fn remove_socket_from_room(room_id: &str, _sid: &str) {
     }
 
     ROOMS.insert(room_id.to_string(), connected_sockets);
+    */
 
+    /*
     //test
     debug!("ROOMS remove_socket_from_room, room_id = {}, sid = {}", room_id, _sid);
     match ROOMS.get(room_id) {
@@ -112,6 +129,7 @@ pub fn remove_socket_from_room(room_id: &str, _sid: &str) {
         }
         None => ()
     };
+    */
 }
 
 pub fn get_sockets_for_room(room_id: &str) -> Option<ReadGuard<String, Vec<ChannelPair>>> {
