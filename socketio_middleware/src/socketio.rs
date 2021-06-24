@@ -444,7 +444,6 @@ impl SocketIOWrapper {
                         info!("{}: Received Socket closed...", self.sid);
                         for room in &self.rooms {
                             debug!("Remove socket {} from room {}.", self.sid, room);
-                            //remove_socket_from_room(&room, &self.sid);
                             SocketIOMessage::Leave(room.to_string());
                         }
 
