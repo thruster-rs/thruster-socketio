@@ -11,6 +11,7 @@ lazy_static! {
 }
 
 // pub type ChannelPair = Sender<SocketIOMessage>;
+#[derive(Clone)]
 pub struct ChannelPair {
     sid: String,
     sender: Sender<InternalMessage>,
@@ -33,6 +34,7 @@ impl ChannelPair {
     }
 }
 
+/*
 pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     let mut connected_sockets = match ROOMS.remove(room_id) {
         Some(val) => val,
@@ -42,16 +44,29 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     connected_sockets.push(channel_pair);
 
     ROOMS.insert(room_id.to_string(), connected_sockets);
-    
-    //test
+}
+*/
+
+pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     debug!("ROOMS join_channel_to_room, room_id = {}", room_id);
-    match ROOMS.get(room_id) {
-        Some(sockets) => {
-            for socket in &*sockets {
-                debug!("ROOMS join_channel_to_room, readGuard socket id = {}", socket.sid());
+    match ROOMS.get_mut(room_id) {
+        Some(mut connected_sockets) => {
+            //check if socketid exist
+            for socket in &*connected_sockets {
+                if socket.sid() == channel_pair.sid {
+                    debug!("Join channel to room, socket_id({}) is exist.", socket.sid());
+                    return;
+                }
             }
+
+            connected_sockets.push(channel_pair);
+            ROOMS.insert(room_id.to_string(), connected_sockets.to_vec());
         }
-        None => ()
+        None => {
+            let mut connected_sockets = Vec::new();
+            connected_sockets.push(channel_pair);
+            ROOMS.insert(room_id.to_string(), connected_sockets);
+        }
     };
 }
 
