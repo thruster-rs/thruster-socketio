@@ -438,18 +438,20 @@ impl SocketIOWrapper {
                     WSSocketMessage::WsPong => {
                         let _ = self.socket.send(Message::Ping([].to_vec())).await;
                     }
+
                     WSSocketMessage::Close => {
-                        /// remove the socket from all joined rooms
+                        // remove the socket from all joined rooms
                         info!("{}: Received Socket closed...", self.sid);
                         for room in &self.rooms {
                             debug!("Remove socket {} from room {}.", self.sid, room);
-                            remove_socket_from_room(&room, &self.sid);
+                            //remove_socket_from_room(&room, &self.sid);
+                            SocketIOMessage::Leave(room.to_string());
                         }
 
                         self.close().await;
                         return;
                     }
-                },
+                }
             }
         }
     }
