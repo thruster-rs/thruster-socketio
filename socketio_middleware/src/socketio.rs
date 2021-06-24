@@ -407,6 +407,8 @@ impl SocketIOWrapper {
                         SocketIOMessage::Leave(room_id) => {
                             let mut i = 0;
                             for room in &self.rooms {
+                                debug!("remove socket {} from room {}", self.sid, room);
+                                
                                 i = i + 1;
                                 if room == &room_id {
                                     self.rooms.remove(i);
