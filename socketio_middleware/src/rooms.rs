@@ -53,6 +53,7 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
         Some(mut connected_sockets) => {
             //check if socketid exist
             for socket in &*connected_sockets {
+                debug!("In room {}, socket_id = {}", room_id, socket.sid());
                 if socket.sid() == channel_pair.sid {
                     debug!("Join channel to room, socket_id({}) is exist.", socket.sid());
                     return;
