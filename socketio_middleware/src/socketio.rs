@@ -393,7 +393,7 @@ impl SocketIOWrapper {
                             // check if room_id exist
                             if self.rooms.contains(&room_id) {
                                 debug!("SocketIOMessage::Join, socketid {} join room, room {} exist.", self.sid, room_id);
-                                return;
+                                break;
                             }                 
 
                             self.rooms.push(room_id.to_string());
