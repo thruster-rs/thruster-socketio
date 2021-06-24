@@ -387,7 +387,7 @@ impl SocketIOWrapper {
                         }
                         SocketIOMessage::Join(room_id) => {
                             self.rooms.push(room_id.to_string());
-                            debug!("SocketIOMessage::Join rooms = {:?}", self.rooms);    
+                            debug!("SocketIOMessage::Join rooms = {:?}, len = {}. socketid = {}", self.rooms, self.rooms.len(), self.sid);
 
                             join_channel_to_room(
                                 &room_id,
