@@ -34,7 +34,6 @@ impl ChannelPair {
     }
 }
 
-/*
 pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     let mut connected_sockets = match ROOMS.remove(room_id) {
         Some(val) => val,
@@ -45,8 +44,8 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
 
     ROOMS.insert(room_id.to_string(), connected_sockets);
 }
-*/
 
+/*
 pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     match ROOMS.get_mut(room_id) {
         Some(mut connected_sockets) => {
@@ -72,6 +71,7 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
         }
     };
 }
+*/
 
 pub fn remove_socket_from_room(room_id: &str, _sid: &str) {
     let mut connected_sockets = match ROOMS.remove(room_id) {
