@@ -55,7 +55,7 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
                 debug!("In room {}, socket_id = {}", room_id, socket.sid());
                 if socket.sid() == channel_pair.sid() {
                     debug!("Join channel to room {}, socket_id({}) is exist.", room_id, socket.sid());
-                    return;
+                    //return;
                 }
             }
 
