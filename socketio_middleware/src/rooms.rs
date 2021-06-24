@@ -48,22 +48,24 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
 */
 
 pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
-    debug!("ROOMS join_channel_to_room, room_id = {}", room_id);
     match ROOMS.get_mut(room_id) {
         Some(mut connected_sockets) => {
             //check if socketid exist
             for socket in &*connected_sockets {
                 debug!("In room {}, socket_id = {}", room_id, socket.sid());
-                if socket.sid() == channel_pair.sid {
-                    debug!("Join channel to room, socket_id({}) is exist.", socket.sid());
+                if socket.sid() == channel_pair.sid() {
+                    debug!("Join channel to room {}, socket_id({}) is exist.", room_id, socket.sid());
                     return;
                 }
             }
 
+            debug!("Socket_id {} insert a exist room {}", channel_pair.sid(), room_id);
             connected_sockets.push(channel_pair);
             ROOMS.insert(room_id.to_string(), connected_sockets.to_vec());
         }
         None => {
+            debug!("Socket_id {} insert a new room {}", channel_pair.sid(), room_id);
+
             let mut connected_sockets = Vec::new();
             connected_sockets.push(channel_pair);
             ROOMS.insert(room_id.to_string(), connected_sockets);
