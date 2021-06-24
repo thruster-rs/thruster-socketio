@@ -390,7 +390,7 @@ impl SocketIOWrapper {
                         }
 
                         SocketIOMessage::Join(room_id) => {
-                            // check if room_id exist
+                            // check if room_id exist, use break, not return.
                             if self.rooms.contains(&room_id) {
                                 debug!("SocketIOMessage::Join, socketid {} join room, room {} exist.", self.sid, room_id);
                                 break;
