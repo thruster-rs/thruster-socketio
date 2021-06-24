@@ -1,4 +1,5 @@
 use chashmap::{CHashMap, ReadGuard};
+use log::{debug};
 
 use crate::socketio::InternalMessage;
 
@@ -41,6 +42,17 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     connected_sockets.push(channel_pair);
 
     ROOMS.insert(room_id.to_string(), connected_sockets);
+    
+    //test
+    debug!("ROOMS join_channel_to_room, room_id = {}", room_id);
+    match ROOMS.get(room_id) {
+        Some(sockets) => {
+            for socket in &*sockets {
+                debug!("ROOMS join_channel_to_room, readGuard socket id = {}", socket.sid());
+            }
+        }
+        None => ()
+    };
 }
 
 pub fn remove_socket_from_room(room_id: &str, _sid: &str) {
@@ -60,6 +72,17 @@ pub fn remove_socket_from_room(room_id: &str, _sid: &str) {
     }
 
     ROOMS.insert(room_id.to_string(), connected_sockets);
+
+    //test
+    debug!("ROOMS remove_socket_from_room, room_id = {}, sid = {}", room_id, _sid);
+    match ROOMS.get(room_id) {
+        Some(sockets) => {
+            for socket in &*sockets {
+                debug!("ROOMS remove_socket_from_room, readGuard socket id = {}", socket.sid());
+            }
+        }
+        None => ()
+    };
 }
 
 pub fn get_sockets_for_room(room_id: &str) -> Option<ReadGuard<String, Vec<ChannelPair>>> {
