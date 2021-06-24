@@ -40,8 +40,15 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
         None => Vec::new(),
     };
 
-    connected_sockets.push(channel_pair);
+    //check if socketid exist
+    for socket in &connected_sockets {
+        if socket.sid() == channel_pair.sid() {
+            debug!("Join channel to room {}, socket_id({}) is exist.", room_id, socket.sid());
+            return;
+        }
+    }
 
+    connected_sockets.push(channel_pair);
     ROOMS.insert(room_id.to_string(), connected_sockets);
 }
 
