@@ -387,12 +387,11 @@ impl SocketIOWrapper {
                         }
                         SocketIOMessage::Join(room_id) => {
                             self.rooms.push(room_id.to_string());
-                            debug!("SocketIOMessage::Join rooms = {:?}, len = {}. socketid = {}", self.rooms, self.rooms.len(), self.sid);
-
                             join_channel_to_room(
                                 &room_id,
                                 ChannelPair::new(&self.sid, self.sender()),
                             );
+                            debug!("SocketIOMessage::Join, socketid = {}, roomid = {}, rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
                         }
                         SocketIOMessage::Leave(room_id) => {
                             let mut i = 0;
@@ -405,6 +404,7 @@ impl SocketIOWrapper {
                             }
 
                             remove_socket_from_room(&room_id, &self.sid);
+                            debug!("SocketIOMessage::Leave, socketid = {}, roomid = {}, rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
                         }
                         SocketIOMessage::AddListener(event, handler) => {
                             let mut existing_handlers = self
