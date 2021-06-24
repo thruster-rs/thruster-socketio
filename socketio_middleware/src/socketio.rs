@@ -49,7 +49,7 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
     match get_sockets_for_room(room_id) {
         Some(channels) => {
             for channel in &*channels {
-                    debug!("found socketid {} in room {}, message = {}",channel.sid(), room_id, message);
+                    debug!("Found socketid {} in room {}, message = {}",channel.sid(), room_id, message);
                     channel.send(InternalMessage::IO(SocketIOMessage::SendMessage(
                         event.to_string(),
                         message.to_string(),
@@ -57,7 +57,7 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
             }
         }
         None => {
-            debug!("found no socketid in room {}, message = {}", room_id, message);
+            debug!("Found no socketid in room {}, message = {}", room_id, message);
         },
     }
 }
@@ -390,7 +390,7 @@ impl SocketIOWrapper {
                         }
 
                         SocketIOMessage::Join(room_id) => {
-                            // check if room_id exist
+                            // check if room_id exist. Don't use return because of the following process such as PING/PONG.
                             if false == self.rooms.contains(&room_id) {
                                 self.rooms.push(room_id.to_string());
                                 join_channel_to_room(
@@ -459,7 +459,10 @@ impl SocketIOWrapper {
                         info!("{}: Received Socket closed...", self.sid);
                         for room in &self.rooms {
                             debug!("Remove socket {} from room {}.", self.sid, room);
-                            SocketIOMessage::Leave(room.to_string());
+                            //SocketIOMessage::Leave(room.to_string());
+                            let _ = self.sender.send(InternalMessage::IO(SocketIOMessage::Leave(
+                                room.to_string(),
+                            )));
                         }
 
                         self.close().await;

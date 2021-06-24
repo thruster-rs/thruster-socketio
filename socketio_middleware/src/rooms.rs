@@ -104,40 +104,13 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
     }
 
     ROOMS.insert(room_id.to_string(), connected_sockets);
-
-    /*
-    for i in 0..connected_sockets.len() - 1 {
-        let i = connected_sockets.len() - 1 - i;
-        let socket = connected_sockets.get(i).unwrap();
-
-        if socket.sid == room_id {
-            connected_sockets.remove(i);
-            break;
-        }
-    }
-
-    ROOMS.insert(room_id.to_string(), connected_sockets);
-    */
-
-    /*
-    //test
-    debug!("ROOMS remove_socket_from_room, room_id = {}, sid = {}", room_id, _sid);
-    match ROOMS.get(room_id) {
-        Some(sockets) => {
-            for socket in &*sockets {
-                debug!("ROOMS remove_socket_from_room, readGuard socket id = {}", socket.sid());
-            }
-        }
-        None => ()
-    };
-    */
 }
 
 pub fn get_sockets_for_room(room_id: &str) -> Option<ReadGuard<String, Vec<ChannelPair>>> {
     ROOMS.get(room_id)
 }
 
-pub fn sockets_number(room_id: &str) -> usize {
+pub fn get_sockets_number_of_room(room_id: &str) -> usize {
     match ROOMS.get(room_id) {
         Some(channels) => {
             return channels.len();
