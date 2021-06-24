@@ -388,7 +388,14 @@ impl SocketIOWrapper {
 
                             let _ = self.socket.send(Message::Text(content)).await;
                         }
+
                         SocketIOMessage::Join(room_id) => {
+                            // check if room_id exist
+                            if self.rooms.contains(&room_id) {
+                                debug!("SocketIOMessage::Join, socketid {} join room, room {} exist.", self.sid, room_id);
+                                return;
+                            }                 
+
                             self.rooms.push(room_id.to_string());
                             join_channel_to_room(
                                 &room_id,
@@ -396,6 +403,7 @@ impl SocketIOWrapper {
                             );
                             debug!("SocketIOMessage::Join, socketid = {}, roomid = {}, rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
                         }
+
                         SocketIOMessage::Leave(room_id) => {
                             let mut i = 0;
                             for room in &self.rooms {
@@ -409,6 +417,7 @@ impl SocketIOWrapper {
                             remove_socket_from_room(&room_id, &self.sid);
                             debug!("SocketIOMessage::Leave, socketid = {}, roomid = {}, rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
                         }
+
                         SocketIOMessage::AddListener(event, handler) => {
                             let mut existing_handlers = self
                                 .event_handlers
