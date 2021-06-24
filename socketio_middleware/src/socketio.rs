@@ -408,12 +408,12 @@ impl SocketIOWrapper {
                             let mut i = 0;
                             for room in &self.rooms {
                                 debug!("remove socket {} from room {}", self.sid, room);
-                                
-                                i = i + 1;
                                 if room == &room_id {
                                     self.rooms.remove(i);
                                     break;
                                 }
+
+                                i = i + 1;
                             }
 
                             remove_socket_from_room(&room_id, &self.sid);

@@ -94,12 +94,13 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
     //check if socketid exist
     let mut i = 0;
     for socket in &connected_sockets {
-        i += 1;
         if socket.sid() == sid {
             debug!("Leave socket {} from room {}.", socket.sid(), room_id);
             connected_sockets.remove(i);
             break;
         }
+
+        i += 1;
     }
 
     ROOMS.insert(room_id.to_string(), connected_sockets);
