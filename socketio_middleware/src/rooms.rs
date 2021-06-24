@@ -41,14 +41,18 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     };
 
     //check if socketid exist
+    let mut exist: bool = false;
     for socket in &connected_sockets {
         if socket.sid() == channel_pair.sid() {
             debug!("Join channel to room {}, socket_id({}) is exist.", room_id, socket.sid());
-            return;
+            exist = true;
+            break;
         }
     }
 
-    connected_sockets.push(channel_pair);
+    if false == exist {
+        connected_sockets.push(channel_pair);
+    }
     ROOMS.insert(room_id.to_string(), connected_sockets);
 }
 
