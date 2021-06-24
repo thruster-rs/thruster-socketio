@@ -390,18 +390,17 @@ impl SocketIOWrapper {
                         }
 
                         SocketIOMessage::Join(room_id) => {
-                            // check if room_id exist, use break, not return.
-                            if self.rooms.contains(&room_id) {
+                            // check if room_id exist
+                            if false == self.rooms.contains(&room_id) {
+                                self.rooms.push(room_id.to_string());
+                                join_channel_to_room(
+                                    &room_id,
+                                    ChannelPair::new(&self.sid, self.sender()),
+                                );
+                                debug!("SocketIOMessage::Join, socketid = {}, roomid = {}, rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
+                            } else {
                                 debug!("SocketIOMessage::Join, socketid {} join room, room {} exist.", self.sid, room_id);
-                                break;
-                            }                 
-
-                            self.rooms.push(room_id.to_string());
-                            join_channel_to_room(
-                                &room_id,
-                                ChannelPair::new(&self.sid, self.sender()),
-                            );
-                            debug!("SocketIOMessage::Join, socketid = {}, roomid = {}, rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
+                            }
                         }
 
                         SocketIOMessage::Leave(room_id) => {
