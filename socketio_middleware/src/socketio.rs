@@ -459,7 +459,6 @@ impl SocketIOWrapper {
                     WSSocketMessage::Close => {
                         // remove the socket from all joined rooms
                         for room in &self.rooms {
-                            debug!("remove socket {} from room {}", self.sid, room);
                             remove_socket_from_room(&room, &self.sid);
                             debug!("SocketIOMessage socketid {} closed, leave from room {}", self.sid, room);                            
                         }
