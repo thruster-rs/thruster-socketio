@@ -61,7 +61,7 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     match ROOMS.get(room_id) {
         Some(sockets) => {
             for socket in &*sockets {
-                debug!("ROOMS: room {} containted socketid {}.", room_id, socket.sid());
+                debug!("ROOMS: room {} containted socketid {}, sockets number = {}.", room_id, socket.sid(), sockets.len());
             }
         }
         None => {
@@ -122,7 +122,7 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
     match ROOMS.get(room_id) {
         Some(sockets) => {
             for socket in &*sockets {
-                debug!("ROOMS: room {} containted socketid {}.", room_id, socket.sid());
+                debug!("ROOMS: room {} containted socketid {}, sockets number = {}.", room_id, socket.sid(), sockets.len());
             }
         }
 
