@@ -45,17 +45,29 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     let mut exist: bool = false;
     for socket in &connected_sockets {
         if socket.sid() == channel_pair.sid() {
-            debug!("ROOMS: socketid({}) doesn't join into room {}, this socketid already exist in the room.", channel_pair.sid(), room_id);
+            debug!("ROOMS: socketid {} doesn't join into room {}, this socketid already exist in the room.", channel_pair.sid(), room_id);
             exist = true;
             break;
         }
     }
 
     if false == exist {
-        debug!("ROOMS: socketid({}) joined into room {}.", channel_pair.sid(), room_id);
+        debug!("ROOMS: socketid {} joined into room {}.", channel_pair.sid(), room_id);
         connected_sockets.push(channel_pair);
     }
     ROOMS.insert(room_id.to_string(), connected_sockets);
+
+    //print all sockets in the room
+    match ROOMS.get(room_id) {
+        Some(sockets) => {
+            for socket in &*sockets {
+                debug!("ROOMS: room {} containted socketid {}.", room_id, socket.sid());
+            }
+        }
+        None => {
+            debug!("ROOMS: no socketid in room {}.", room_id);
+        }
+    }
 }
 
 /*
@@ -96,7 +108,7 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
     let mut i = 0;
     for socket in &connected_sockets {
         if socket.sid() == sid {
-            debug!("ROOMS: socketid({}) leave from room({}).", socket.sid(), room_id);
+            debug!("ROOMS: socketid {} leaved from room {}.", socket.sid(), room_id);
             connected_sockets.remove(i);
             break;
         }
@@ -105,6 +117,19 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
     }
 
     ROOMS.insert(room_id.to_string(), connected_sockets);
+
+    //print all sockets in the room
+    match ROOMS.get(room_id) {
+        Some(sockets) => {
+            for socket in &*sockets {
+                debug!("ROOMS: room {} containted socketid {}.", room_id, socket.sid());
+            }
+        }
+
+        None => {
+            debug!("ROOMS: no socketid in room {}.", room_id);
+        }
+    }
 }
 
 pub fn get_sockets_for_room(room_id: &str) -> Option<ReadGuard<String, Vec<ChannelPair>>> {
