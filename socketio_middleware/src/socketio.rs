@@ -397,26 +397,25 @@ impl SocketIOWrapper {
                                     &room_id,
                                     ChannelPair::new(&self.sid, self.sender()),
                                 );
-                                debug!("SocketIOMessage::Join, socketid = {}, roomid = {}, rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
+                                debug!("SocketIOMessage socketid({}) joined into room({}). Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
                             } else {
-                                debug!("SocketIOMessage::Join, socketid {} join room, room {} exist.", self.sid, room_id);
+                                debug!("SocketIOMessage socketid({}) doesn't join room({}), this room exist.", self.sid, room_id);
                             }
                         }
 
                         SocketIOMessage::Leave(room_id) => {
                             let mut i = 0;
                             for room in &self.rooms {
-                                debug!("remove socket {} from room {}", self.sid, room);
                                 if room == &room_id {
                                     self.rooms.remove(i);
+
+                                    remove_socket_from_room(&room_id, &self.sid);
+                                    debug!("SocketIOMessage socketid({}) leaved from room({}). Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
                                     break;
                                 }
 
                                 i = i + 1;
                             }
-
-                            remove_socket_from_room(&room_id, &self.sid);
-                            debug!("SocketIOMessage::Leave, socketid = {}, roomid = {}, rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
                         }
 
                         SocketIOMessage::AddListener(event, handler) => {
@@ -455,8 +454,25 @@ impl SocketIOWrapper {
                     }
 
                     WSSocketMessage::Close => {
+                        /*
                         // remove the socket from all joined rooms
                         info!("{}: Received Socket closed...", self.sid);
+                        let mut i = 0;
+                        for room in &self.rooms {
+                            debug!("remove socket {} from room {}", self.sid, room);
+                            if room == &room_id {
+                                self.rooms.remove(i);
+                                break;
+                            }
+
+                            i = i + 1;
+                        }
+
+                        remove_socket_from_room(&room_id, &self.sid);
+                        debug!("SocketIOMessage::Leave, socketid = {}, roomid = {}, rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
+                        */
+
+                        /*
                         for room in &self.rooms {
                             debug!("Remove socket {} from room {}.", self.sid, room);
                             //SocketIOMessage::Leave(room.to_string());
@@ -464,7 +480,7 @@ impl SocketIOWrapper {
                                 room.to_string(),
                             )));
                         }
-
+                        */
                         self.close().await;
                         return;
                     }

@@ -45,13 +45,14 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     let mut exist: bool = false;
     for socket in &connected_sockets {
         if socket.sid() == channel_pair.sid() {
-            debug!("Join socket to room {}, socket_id({}) is exist.", room_id, socket.sid());
+            debug!("ROOMS: socketid({}) doesn't join into room {}, this socketid already exist in the room.", channel_pair.sid(), room_id);
             exist = true;
             break;
         }
     }
 
     if false == exist {
+        debug!("ROOMS: socketid({}) joined into room {}.", channel_pair.sid(), room_id);
         connected_sockets.push(channel_pair);
     }
     ROOMS.insert(room_id.to_string(), connected_sockets);
@@ -95,7 +96,7 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
     let mut i = 0;
     for socket in &connected_sockets {
         if socket.sid() == sid {
-            debug!("Leave socket {} from room {}.", socket.sid(), room_id);
+            debug!("ROOMS: socketid({}) leave from room({}).", socket.sid(), room_id);
             connected_sockets.remove(i);
             break;
         }
