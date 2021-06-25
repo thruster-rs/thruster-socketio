@@ -49,15 +49,15 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
     match get_sockets_for_room(room_id) {
         Some(channels) => {
             for channel in &*channels {
-                    debug!("Found socketid {} in room {}, message = {}",channel.sid(), room_id, message);
                     channel.send(InternalMessage::IO(SocketIOMessage::SendMessage(
                         event.to_string(),
                         message.to_string(),
                     )));
+                    debug!("Found socketid {} in room {}, send message = {}",channel.sid(), room_id, message);
             }
         }
         None => {
-            debug!("Found no socketid in room {}, message = {}", room_id, message);
+            debug!("Found no socketid in room {}, not send message = {}", room_id, message);
         },
     }
 }
