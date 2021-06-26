@@ -6,7 +6,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use futures::stream::FuturesUnordered;
 use futures_util::sink::SinkExt;
 use futures_util::stream::SplitSink;
-use log::{info, debug};
+use log::{trace, debug, info};
 use std::boxed::Box;
 use std::collections::HashMap;
 use std::fmt;
@@ -57,7 +57,7 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
             }
         }
         None => {
-            debug!("Found no socketid in room {}, not sending message = {}", room_id, message);
+            trace!("Found no socketid in room {}, not sending message = {}", room_id, message);
         },
     }
 }
@@ -463,14 +463,6 @@ impl SocketIOWrapper {
                     }
 
                     WSSocketMessage::Close => {
-                        /*
-                        // remove the socket from all joined rooms
-                        for room in &self.rooms {
-                            remove_socket_from_room(&room, &self.sid);
-                            debug!("SocketIOMessage socketid {} closed, leave room {}", self.sid, room);                            
-                        }
-                        */
-
                         self.close().await;
                         return;
                     }
