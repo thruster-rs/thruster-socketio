@@ -53,11 +53,11 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
                         event.to_string(),
                         message.to_string(),
                     )));
-                    debug!("Found socketid {} in room {}, send message = {}",channel.sid(), room_id, message);
+                    debug!("Found socketid {} in room {}, sending message = {}", channel.sid(), room_id, message);
             }
         }
         None => {
-            debug!("Found no socketid in room {}, not send message = {}", room_id, message);
+            debug!("Found no socketid in room {}, not sending message = {}", room_id, message);
         },
     }
 }
@@ -305,6 +305,12 @@ impl SocketIOWrapper {
     }
 
     pub async fn close(mut self) {
+        // remove the socket from all joined rooms
+        for room in &self.rooms {
+            remove_socket_from_room(&room, &self.sid);
+            debug!("SocketIOMessage socketid {} closed, leave room {}", self.sid, room);                            
+        }
+
         let _res = self.socket.close().await;
     }
 
@@ -391,9 +397,9 @@ impl SocketIOWrapper {
 
                         SocketIOMessage::Join(room_id) => {
                             // check if room_id exist. Don't use return because of the following process such as PING/PONG.
-                            if false == self.rooms.contains(&room_id) {
+                            if !self.rooms.contains(&room_id) {
                                 self.rooms.push(room_id.to_string());
-                                debug!("SocketIOMessage socketid {} joined into room {}. Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
+                                debug!("SocketIOMessage socketid {} joined room {}. Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
 
                                 //Call rooms::join_channel_to_room
                                 join_channel_to_room(
@@ -401,7 +407,7 @@ impl SocketIOWrapper {
                                     ChannelPair::new(&self.sid, self.sender()),
                                 );
                             } else {
-                                debug!("SocketIOMessage socketid {} doesn't join into room {}, this room exist.", self.sid, room_id);
+                                debug!("SocketIOMessage socketid {} is already in room {}. Not joining.", self.sid, room_id);
                             }
                         }
 
@@ -410,7 +416,7 @@ impl SocketIOWrapper {
                             for room in &self.rooms {
                                 if room == &room_id {
                                     self.rooms.remove(i);
-                                    debug!("SocketIOMessage socketid {} leaved from room {}. Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
+                                    debug!("SocketIOMessage socketid {} leaved room {}. Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
 
                                     //Call rooms::remove_socket_from_room
                                     remove_socket_from_room(&room_id, &self.sid);
@@ -457,11 +463,13 @@ impl SocketIOWrapper {
                     }
 
                     WSSocketMessage::Close => {
+                        /*
                         // remove the socket from all joined rooms
                         for room in &self.rooms {
                             remove_socket_from_room(&room, &self.sid);
-                            debug!("SocketIOMessage socketid {} closed, leave from room {}", self.sid, room);                            
+                            debug!("SocketIOMessage socketid {} closed, leave room {}", self.sid, room);                            
                         }
+                        */
 
                         self.close().await;
                         return;
