@@ -56,6 +56,7 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
         connected_sockets.push(channel_pair);
     }
     ROOMS.insert(room_id.to_string(), connected_sockets);
+    print_sockets_for_room(room_id);
 }
 
 pub fn remove_socket_from_room(room_id: &str, sid: &str) {
@@ -65,19 +66,6 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
     };
 
     //check if socketid exist
-    /*
-    let mut i = 0;
-    for socket in &connected_sockets {
-        if socket.sid() == sid {
-            debug!("ROOMS: socketid {} leave room {}.", socket.sid(), room_id);
-            connected_sockets.remove(i);
-            break;
-        }
-
-        i += 1;
-    }
-    */
-
     for i in 0..connected_sockets.len() {
         let socket = connected_sockets.get(i).unwrap();
 
@@ -89,8 +77,6 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
     }
 
     ROOMS.insert(room_id.to_string(), connected_sockets);
-
-    print_sockets_for_room(room_id);
 }
 
 pub fn get_sockets_for_room(room_id: &str) -> Option<ReadGuard<String, Vec<ChannelPair>>> {
