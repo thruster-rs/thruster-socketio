@@ -36,6 +36,7 @@ impl ChannelPair {
 
 pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     //TODO: why use remove, it is low performance.
+    //By trezm: this should probably be a get_mut (see here.) Be warned though, that this will create a write lock so this method must be super fast.
     let mut connected_sockets = match ROOMS.remove(room_id) {
         Some(val) => val,
         None => Vec::new(),
@@ -56,7 +57,6 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
         connected_sockets.push(channel_pair);
     }
     ROOMS.insert(room_id.to_string(), connected_sockets);
-    print_sockets_for_room(room_id);
 }
 
 pub fn remove_socket_from_room(room_id: &str, sid: &str) {
