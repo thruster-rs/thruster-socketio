@@ -6,7 +6,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use futures::stream::FuturesUnordered;
 use futures_util::sink::SinkExt;
 use futures_util::stream::SplitSink;
-use log::info;
+use log::{trace, debug, info};
 use std::boxed::Box;
 use std::collections::HashMap;
 use std::fmt;
@@ -53,9 +53,12 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
                         event.to_string(),
                         message.to_string(),
                     )));
+                    debug!("Found socketid {} in room {}, sending message = {}", channel.sid(), room_id, message);
             }
         }
-        None => (),
+        None => {
+            trace!("Found no socketid in room {}, not sending message = {}", room_id, message);
+        },
     }
 }
 
@@ -302,6 +305,12 @@ impl SocketIOWrapper {
     }
 
     pub async fn close(mut self) {
+        // remove the socket from all joined rooms
+        for room in &self.rooms {
+            remove_socket_from_room(&room, &self.sid);
+            debug!("SocketIOMessage socketid {} closed, leave room {}", self.sid, room);                            
+        }
+
         let _res = self.socket.close().await;
     }
 
@@ -385,25 +394,39 @@ impl SocketIOWrapper {
 
                             let _ = self.socket.send(Message::Text(content)).await;
                         }
+
                         SocketIOMessage::Join(room_id) => {
-                            self.rooms.push(room_id.to_string());
-                            join_channel_to_room(
-                                &room_id,
-                                ChannelPair::new(&self.sid, self.sender()),
-                            );
+                            // check if room_id exist. Don't use return because of the following process such as PING/PONG.
+                            if !self.rooms.contains(&room_id) {
+                                self.rooms.push(room_id.to_string());
+                                debug!("SocketIOMessage socketid {} joined room {}. Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
+
+                                //Call rooms::join_channel_to_room
+                                join_channel_to_room(
+                                    &room_id,
+                                    ChannelPair::new(&self.sid, self.sender()),
+                                );
+                            } else {
+                                debug!("SocketIOMessage socketid {} is already in room {}. Not joining.", self.sid, room_id);
+                            }
                         }
+
                         SocketIOMessage::Leave(room_id) => {
                             let mut i = 0;
                             for room in &self.rooms {
-                                i = i + 1;
                                 if room == &room_id {
                                     self.rooms.remove(i);
+                                    debug!("SocketIOMessage socketid {} leaved room {}. Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
+
+                                    //Call rooms::remove_socket_from_room
+                                    remove_socket_from_room(&room_id, &self.sid);
                                     break;
                                 }
-                            }
 
-                            remove_socket_from_room(&room_id, &self.sid);
+                                i = i + 1;
+                            }
                         }
+
                         SocketIOMessage::AddListener(event, handler) => {
                             let mut existing_handlers = self
                                 .event_handlers
@@ -438,11 +461,12 @@ impl SocketIOWrapper {
                     WSSocketMessage::WsPong => {
                         let _ = self.socket.send(Message::Ping([].to_vec())).await;
                     }
+
                     WSSocketMessage::Close => {
                         self.close().await;
                         return;
                     }
-                },
+                }
             }
         }
     }
