@@ -94,6 +94,7 @@ pub fn get_sockets_number_for_room(room_id: &str) -> usize {
 /// print all sockets for room
 ///
 pub fn print_sockets_for_room(room_id: &str) {
+    //for (key, value) in ROOMS.into_iter() {}
     match ROOMS.get(room_id) {
         Some(sockets) => {
             for socket in &*sockets {
@@ -106,3 +107,11 @@ pub fn print_sockets_for_room(room_id: &str) {
         }
     }
 }
+
+///
+/// get rooms number
+///
+pub fn get_rooms_number() -> usize {
+    ROOMS.len()
+}
+    
