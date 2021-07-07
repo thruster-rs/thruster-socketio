@@ -1,5 +1,5 @@
 use chashmap::{CHashMap, ReadGuard};
-use log::{debug};
+use log::{debug, info};
 
 use crate::socketio::InternalMessage;
 
@@ -97,9 +97,13 @@ pub fn print_sockets_for_room(room_id: &str) {
     //for (key, value) in ROOMS.into_iter() {}
     match ROOMS.get(room_id) {
         Some(sockets) => {
+            info!("ROOMS: room {} containt sockets number = {}.", room_id, sockets.len());
+
+            /*
             for socket in &*sockets {
                 debug!("ROOMS: room {} containted socketid {}, sockets number = {}.", room_id, socket.sid(), sockets.len());
             }
+            */
         }
 
         None => {
