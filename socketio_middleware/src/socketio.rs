@@ -37,7 +37,7 @@ lazy_static! {
 ///
 /// Broadcast a message to all clients connected to a room.
 ///
-pub async fn broadcast(room_id: &str, event: &str, message: &str) -> i32{
+pub async fn broadcast(room_id: &str, event: &str, message: &str) -> i64{
     // Send out via adapter
     if let Some(adapter) = &*ADAPTER.read().unwrap() {
         adapter.incoming(
@@ -47,7 +47,7 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) -> i32{
     }
 
     //Sending count
-    let mut count :i32 = 0;
+    let mut count :i64 = 0;
     match get_sockets_for_room(room_id) {
         Some(channels) => {
             for channel in &*channels {
