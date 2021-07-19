@@ -37,7 +37,7 @@ lazy_static! {
 ///
 /// Broadcast a message to all clients connected to a room.
 ///
-pub async fn broadcast(room_id: &str, event: &str, message: &str) {
+pub async fn broadcast(room_id: &str, event: &str, message: &str) -> i32{
     // Send out via adapter
     if let Some(adapter) = &*ADAPTER.read().unwrap() {
         adapter.incoming(
@@ -46,6 +46,8 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
         );
     }
 
+    //Sending count
+    let mut count :i32 = 0;
     match get_sockets_for_room(room_id) {
         Some(channels) => {
             for channel in &*channels {
@@ -53,6 +55,7 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
                         event.to_string(),
                         message.to_string(),
                     )));
+                    count += 1;
                     debug!("Found socketid {} in room {}, sending message = {}", channel.sid(), room_id, message);
             }
         }
@@ -60,6 +63,8 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
             trace!("Found no socketid in room {}, not sending message = {}", room_id, message);
         },
     }
+
+    count
 }
 
 pub fn adapter(new_adapter: impl SocketIOAdapter + 'static) {
