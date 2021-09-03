@@ -56,7 +56,7 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) -> u64{
                         message.to_string(),
                     )));
                     count += 1;
-                    debug!("Found socketid {} in room {}, sending message = {}", channel.sid(), room_id, message);
+                    trace!("Found socketid {} in room {}, sending message = {}", channel.sid(), room_id, message);
             }
         }
         None => {
