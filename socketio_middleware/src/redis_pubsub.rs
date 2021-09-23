@@ -84,7 +84,8 @@ pub async fn connect_to_pubsub(redis_host: &str, channel_name: &str) -> RedisRes
     let client = trezm_redis::Client::open(redis_host).unwrap();
     let mut publish_conn = client.get_async_connection().await?;
 
-    let (sender, mut receiver) = unbounded(16);
+    //let (sender, mut receiver) = unbounded(16);
+    let (sender, mut receiver) = unbounded(200);
 
     CHANNEL.write().unwrap().push(sender);
 
