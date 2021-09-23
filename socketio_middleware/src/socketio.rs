@@ -17,6 +17,9 @@ use tokio_stream::StreamExt;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::WebSocketStream;
 
+use std::time::Duration;
+use std::{thread};
+
 use crate::rooms::{
     get_sockets_for_room, join_channel_to_room, remove_socket_from_room, ChannelPair,
 };
@@ -173,6 +176,7 @@ impl SocketIOSocket {
         let _ = self.sender.send(InternalMessage::IO(SocketIOMessage::Join(
             room_id.to_string(),
         )));
+        thread::sleep(Duration::from_millis(1));
     }
 
     ///
