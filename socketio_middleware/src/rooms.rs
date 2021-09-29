@@ -76,7 +76,10 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
         }
     }
 
-    ROOMS.insert(room_id.to_string(), connected_sockets);
+    //if there are still exist sockets, then insert back to ROOMS.
+    if connected_sockets.len() > 0 {
+        ROOMS.insert(room_id.to_string(), connected_sockets);
+    }
 }
 
 pub fn get_sockets_for_room(room_id: &str) -> Option<ReadGuard<String, Vec<ChannelPair>>> {
