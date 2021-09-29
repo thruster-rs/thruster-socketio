@@ -111,7 +111,7 @@ pub fn print_sockets_for_room(room_id: &str) {
         }
 
         None => {
-            debug!("ROOMS: no socket in room {}.", room_id);
+            debug!("ROOMS: there is no room {}.", room_id);
         }
     }
 }
