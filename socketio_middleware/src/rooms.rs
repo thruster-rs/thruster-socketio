@@ -53,7 +53,7 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     }
 
     if !exist {
-        debug!("ROOMS: socketid {} joined room {}.", channel_pair.sid(), room_id);
+        debug!("ROOMS: socketid {} joined room {}, room len = {}.", channel_pair.sid(), room_id, connected_sockets.len());
         connected_sockets.push(channel_pair);
     }
     ROOMS.insert(room_id.to_string(), connected_sockets);
@@ -70,7 +70,7 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
         let socket = connected_sockets.get(i).unwrap();
 
         if socket.sid == sid {
-            debug!("ROOMS: socketid {} leave room {}.", socket.sid, room_id);
+            debug!("ROOMS: socketid {} leave room {}, room len = {}.", socket.sid, room_id, connected_sockets.len()-1);
             connected_sockets.remove(i);
             break;
         }
@@ -78,6 +78,7 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
 
     //if there are still exist sockets, then insert back to ROOMS.
     if connected_sockets.len() > 0 {
+        debug!("ROOMS: {} sockets insert back into ROOMS.", connected_sockets.len());
         ROOMS.insert(room_id.to_string(), connected_sockets);
     }
 }
