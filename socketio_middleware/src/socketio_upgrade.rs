@@ -42,9 +42,22 @@ enum AllowedVersions {
     V4,
 }
 
+/// Handles any incoming socket.io requests for a particular context by using the passed in handler.
+///
+/// Defaults to a maximum message capacity of 16. If there are more connections, then messages can
+/// (and will!) be dropped.
 pub async fn handle_io<T: Context + SocketIOContext + Default>(
+    context: T,
+    handler: fn(SocketIOSocket) -> Pin<Box<dyn Future<Output = Result<SocketIOSocket, ()>> + Send>>,
+) -> MiddlewareResult<T> {
+    handle_io_with_capacity(context, handler, 16).await
+}
+
+/// Handles any incoming socket.io requests for a particular context by using the passed in handler.
+pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
     mut context: T,
     handler: fn(SocketIOSocket) -> Pin<Box<dyn Future<Output = Result<SocketIOSocket, ()>> + Send>>,
+    message_capacity: usize,
 ) -> MiddlewareResult<T> {
     let param_map = match context.route().split("?").collect::<Vec<&str>>().get(1) {
         Some(val) => {
@@ -137,7 +150,7 @@ pub async fn handle_io<T: Context + SocketIOContext + Default>(
             }
 
             let mut msg_fut = ws_receiver.next();
-            let socket_wrapper = SocketIO::new(sid.clone(), ws_sender);
+            let socket_wrapper = SocketIO::new(sid.clone(), ws_sender, message_capacity);
             let sender = socket_wrapper.sender();
 
             tokio::spawn(async move {

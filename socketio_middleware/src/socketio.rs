@@ -291,8 +291,9 @@ impl SocketIOWrapper {
     pub fn new(
         sid: String,
         socket: SplitSink<WebSocketStream<hyper::upgrade::Upgraded>, Message>,
+        message_capacity: usize,
     ) -> Self {
-        let (sender, receiver) = unbounded(16);
+        let (sender, receiver) = unbounded(message_capacity);
         SocketIOWrapper {
             sid,
             message_number: 0,
