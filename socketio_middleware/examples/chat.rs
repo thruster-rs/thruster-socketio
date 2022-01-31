@@ -88,6 +88,7 @@ async fn main() {
     app.get("/", async_middleware!(Ctx, [index]));
     app.options("/socket.io/*", async_middleware!(Ctx, [noop]));
     let _ = HyperServer::new(app)
+        .with_upgrades(true)
         .build(&host, port.parse::<u16>().unwrap())
         .await;
 }
