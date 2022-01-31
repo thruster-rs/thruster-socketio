@@ -82,7 +82,7 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
         _ => AllowedVersions::V3,
     };
 
-    let request = context.into_request();
+    let mut request = context.into_request();
 
     // Theoretically should check this and the transport query param
     if request.headers().contains_key(hyper::header::UPGRADE) {
@@ -118,7 +118,9 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
 
         // Spawn a separate future to handle this connection
         tokio::spawn(async move {
-            let upgraded_req = hyper::upgrade::on(request).await.unwrap();
+            let upgraded_req = hyper::upgrade::on(&mut request)
+                .await
+                .expect("Could not upgrade request to websocket");
 
             let ws_stream = tokio_tungstenite::WebSocketStream::from_raw_socket(
                 upgraded_req,
