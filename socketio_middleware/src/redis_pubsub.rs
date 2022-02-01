@@ -77,15 +77,28 @@ pub fn send_message(room_id: &str, message: SocketIOMessage) {
     }
 }
 
+/// Connect to a redis host using a particular channel name (in redis) in order to pass messages
+/// between servers or processes.
 pub async fn connect_to_pubsub(redis_host: &str, channel_name: &str) -> RedisResult<()> {
+    connect_to_pubsub_with_capacity(redis_host, channel_name, 16).await
+}
+
+/// Connect to a redis host using a particular channel name (in redis) in order to pass messages
+/// between servers or processes.
+///
+/// Capacity represents the maximum number of in-flight messages before processing has occurred.
+pub async fn connect_to_pubsub_with_capacity(
+    redis_host: &str,
+    channel_name: &str,
+    message_capacity: usize,
+) -> RedisResult<()> {
     let redis_host = redis_host.to_string();
     let channel_name = channel_name.to_string();
 
     let client = trezm_redis::Client::open(redis_host).unwrap();
     let mut publish_conn = client.get_async_connection().await?;
 
-    //let (sender, mut receiver) = unbounded(16);
-    let (sender, mut receiver) = unbounded(200);
+    let (sender, mut receiver) = unbounded(message_capacity);
 
     CHANNEL.write().unwrap().push(sender);
 
@@ -141,7 +154,10 @@ pub async fn connect_to_pubsub(redis_host: &str, channel_name: &str) -> RedisRes
     tokio::spawn(async move {
         let mut pubsub_conn = client.get_async_connection().await.unwrap().into_pubsub();
 
-        pubsub_conn.subscribe(channel_name_incoming).await.unwrap();
+        pubsub_conn
+            .subscribe(channel_name_incoming)
+            .await
+            .expect("Was unable to subscribe to incoming channel in redis");
         let mut pubsub_stream = pubsub_conn.on_message();
 
         while let Some(msg) = pubsub_stream.next().await {

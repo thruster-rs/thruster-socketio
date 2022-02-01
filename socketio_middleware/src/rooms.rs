@@ -78,7 +78,7 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
 
     //if there are still exist sockets, then insert back to ROOMS.
     if connected_sockets.len() > 0 {
-        debug!("ROOMS: {} sockets insert back into ROOMS.", connected_sockets.len());
+        debug!("ROOMS: {} sockets insert back into ROOMS {}.", connected_sockets.len(), room_id);
         ROOMS.insert(room_id.to_string(), connected_sockets);
     }
 }
