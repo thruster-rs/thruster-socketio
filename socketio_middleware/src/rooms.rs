@@ -1,5 +1,5 @@
 use chashmap::{CHashMap, ReadGuard};
-use log::{debug, info};
+use log::{debug};
 
 use crate::socketio::InternalMessage;
 
@@ -53,7 +53,7 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     }
 
     if !exist {
-        debug!("ROOMS: socketid {} joined room {}, room len = {}.", channel_pair.sid(), room_id, connected_sockets.len()+1);
+        debug!("ROOMS: socketid {} joined room {}, room len = {}.", channel_pair.sid(), room_id, connected_sockets.len() + 1);
         connected_sockets.push(channel_pair);
     }
     ROOMS.insert(room_id.to_string(), connected_sockets);
@@ -100,7 +100,7 @@ pub fn get_sockets_number_for_room(room_id: &str) -> usize {
 pub fn print_sockets_for_room(room_id: &str) {
     match ROOMS.get(room_id) {
         Some(sockets) => {
-            info!("ROOMS: room {} containt sockets number = {}.", room_id, sockets.len());
+            debug!("ROOMS: room {} containt sockets number = {}.", room_id, sockets.len());
             /*
             for socket in &*sockets {
                 debug!("ROOMS: room {} containted socketid {}, sockets number = {}.", room_id, socket.sid(), sockets.len());
@@ -115,9 +115,9 @@ pub fn print_sockets_for_room(room_id: &str) {
 }
 
 ///
-/// get rooms number
+/// Returns the count of rooms this middleware currently has reference too.
 ///
-pub fn get_rooms_number() -> usize {
+pub fn get_rooms_count() -> usize {
     ROOMS.len()
 }
     

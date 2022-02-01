@@ -53,7 +53,7 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
                         event.to_string(),
                         message.to_string(),
                     )));
-                    trace!("Found socketid {} in room {}, sending message = {}", channel.sid(), room_id, message);
+                    debug!("Found socketid {} in room {}, sending message = {}", channel.sid(), room_id, message);
             }
         }
         None => {
