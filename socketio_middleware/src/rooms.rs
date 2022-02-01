@@ -98,11 +98,9 @@ pub fn get_sockets_number_for_room(room_id: &str) -> usize {
 /// print all sockets for room
 ///
 pub fn print_sockets_for_room(room_id: &str) {
-    //for (key, value) in ROOMS.into_iter() {}
     match ROOMS.get(room_id) {
         Some(sockets) => {
             info!("ROOMS: room {} containt sockets number = {}.", room_id, sockets.len());
-
             /*
             for socket in &*sockets {
                 debug!("ROOMS: room {} containted socketid {}, sockets number = {}.", room_id, socket.sid(), sockets.len());
@@ -111,7 +109,7 @@ pub fn print_sockets_for_room(room_id: &str) {
         }
 
         None => {
-            debug!("ROOMS: there is no room {}.", room_id);
+            debug!("ROOMS: no socket in room {}.", room_id);
         }
     }
 }
