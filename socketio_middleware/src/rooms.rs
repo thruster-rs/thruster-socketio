@@ -53,7 +53,7 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     }
 
     if !exist {
-        debug!("ROOMS: socketid {} joined room {}.", channel_pair.sid(), room_id);
+        debug!("ROOMS: socketid {} joined room {}, room len = {}.", channel_pair.sid(), room_id, connected_sockets.len() + 1);
         connected_sockets.push(channel_pair);
     }
     ROOMS.insert(room_id.to_string(), connected_sockets);
@@ -70,13 +70,17 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
         let socket = connected_sockets.get(i).unwrap();
 
         if socket.sid == sid {
-            debug!("ROOMS: socketid {} leave room {}.", socket.sid, room_id);
             connected_sockets.remove(i);
+            debug!("ROOMS: socketid {} leave room {}, room len = {}.", sid, room_id, connected_sockets.len());
             break;
         }
     }
 
-    ROOMS.insert(room_id.to_string(), connected_sockets);
+    //if there are still exist sockets, then insert back to ROOMS.
+    if connected_sockets.len() > 0 {
+        debug!("ROOMS: {} sockets insert back into ROOMS {}.", connected_sockets.len(), room_id);
+        ROOMS.insert(room_id.to_string(), connected_sockets);
+    }
 }
 
 pub fn get_sockets_for_room(room_id: &str) -> Option<ReadGuard<String, Vec<ChannelPair>>> {
@@ -96,9 +100,12 @@ pub fn get_sockets_number_for_room(room_id: &str) -> usize {
 pub fn print_sockets_for_room(room_id: &str) {
     match ROOMS.get(room_id) {
         Some(sockets) => {
+            debug!("ROOMS: room {} containt sockets number = {}.", room_id, sockets.len());
+            /*
             for socket in &*sockets {
                 debug!("ROOMS: room {} containted socketid {}, sockets number = {}.", room_id, socket.sid(), sockets.len());
             }
+            */
         }
 
         None => {
@@ -106,3 +113,11 @@ pub fn print_sockets_for_room(room_id: &str) {
         }
     }
 }
+
+///
+/// Returns the count of rooms this middleware currently has reference too.
+///
+pub fn get_rooms_count() -> usize {
+    ROOMS.len()
+}
+    
