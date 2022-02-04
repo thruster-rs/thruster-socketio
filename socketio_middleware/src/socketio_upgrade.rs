@@ -110,7 +110,7 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
             sid: sid.clone(), // must be unique
             upgrades: vec!["websocket".to_string()],
             ping_interval: 25000,
-            ping_timeout: 5000,
+            ping_timeout: 20000,
         })
         .unwrap();
 
@@ -238,7 +238,7 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
             sid: generate_sid(), // must be unique
             upgrades: vec!["websocket".to_string()],
             ping_interval: 25000,
-            ping_timeout: 5000,
+            ping_timeout: 20000,
         })
         .unwrap();
 
