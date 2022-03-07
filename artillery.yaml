@@ -1,0 +1,15 @@
+config:
+  target: "ws://localhost:4321"
+  socketio:
+    transports: ["websocket"]
+  phases:
+    - duration: 600
+      arrivalRate: 1
+
+scenarios:
+  - name: Chat test
+    engine: socketio # Enable the Socket.IO engine
+    flow:
+      - emit:
+          channel: "join room"
+          data: "test-room"

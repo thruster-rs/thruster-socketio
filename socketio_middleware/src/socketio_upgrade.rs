@@ -234,19 +234,46 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
 
         Ok(context)
     } else {
-        let body = serde_json::to_string(&HandshakeResponseData {
-            sid: generate_sid(), // must be unique
-            upgrades: vec!["websocket".to_string()],
-            ping_interval: 25000,
-            ping_timeout: 20000,
-        })
-        .unwrap();
+        let polling_enabled = request
+            .uri()
+            .to_string()
+            .split('?')
+            .nth(1)
+            .map(|query_string| {
+                query_string.split('&').fold(HashMap::new(), |mut acc, x| {
+                    let mut pieces = x.split('=');
+                    acc.insert(
+                        pieces.next().unwrap_or_default(),
+                        pieces.next().unwrap_or_default(),
+                    );
 
-        let encoded = format!("{}:0'{}'2:40", body.len(), body);
+                    acc
+                })
+            })
+            .unwrap_or_default()
+            .get("transport")
+            .map(|v| v.contains("polling"))
+            .unwrap_or(false);
 
         context = T::default();
-        context.set_body(encoded.as_bytes().to_vec());
+        if !polling_enabled {
+            context.status(400);
+            context.set_body(
+                "Polling transport disabled, but no upgrade header for websocket."
+                    .as_bytes()
+                    .to_vec(),
+            );
 
-        Ok(context)
+            Ok(context)
+        } else {
+            context.set_body(
+                "Polling transport is not implemented yet."
+                    .as_bytes()
+                    .to_vec(),
+            );
+            context.status(400);
+
+            Ok(context)
+        }
     }
 }
