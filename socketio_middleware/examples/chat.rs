@@ -76,7 +76,7 @@ async fn main() {
     let port = env::var("PORT").unwrap_or("4321".to_string());
 
     tokio::spawn(async {
-        let _ = connect_to_pubsub("redis://127.0.0.1/", "socketio-example")
+        let _ = connect_to_pubsub("redis://127.0.0.1", "socketio-example")
             .await
             .expect("Could not connect to redis :(");
         adapter(RedisAdapter {});
