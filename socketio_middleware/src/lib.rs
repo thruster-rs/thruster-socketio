@@ -16,6 +16,6 @@ mod socketio_message;
 mod socketio_upgrade;
 
 pub use rooms::{get_sockets_for_room, get_sockets_number_for_room, print_sockets_for_room, get_rooms_count};
-pub use socketio::{adapter, broadcast, SocketIOAdapter, SocketIOSocket as SocketIO};
+pub use socketio::{adapter, broadcast, broadcast_binary, SocketIOAdapter, SocketIOSocket as SocketIO};
 pub use socketio_context::SocketIOContext;
 pub use socketio_upgrade::{handle_io, handle_io_with_capacity};
