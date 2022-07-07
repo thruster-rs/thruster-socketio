@@ -425,22 +425,6 @@ impl SocketIOWrapper {
                         }
 
                         SocketIOMessage::SendBinaryMessage(_event, message) => {
-                            /*
-                            self.message_number += 1;
-
-                            let message = match &message[0..1] {
-                                "{" | "[" => message,
-                                _ => format!("\"{}\"", message),
-                            };
-
-                            // TODO(trezm): Payload needs to be quoted if just a string, not if it's json
-                            let content = format!(
-                                "{}{}[\"{}\",{}]",
-                                SOCKETIO_EVENT_MESSAGE, self.message_number, event, message
-                            );
-
-                            let binary_content = bincode::serialize(&content).unwrap();
-                            */
                             let _ = self.socket.send(Message::Binary(message)).await;
                         }
 
