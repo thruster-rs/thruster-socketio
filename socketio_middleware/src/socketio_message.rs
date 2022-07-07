@@ -5,7 +5,7 @@ use std::fmt;
 pub enum SocketIOMessage {
     Message(String, String), // Event, Message
     SendMessage(String, String),
-    SendBinaryMessage(String, String),
+    SendBinaryMessage(String, Vec<u8>),
     Join(String),
     Leave(String),
     AddListener(String, SocketIOHandler),
@@ -24,7 +24,7 @@ impl fmt::Display for SocketIOMessage {
                 write!(f, "SocketIOMessage::SendMessage({}, {})", event, message)
             }
             SocketIOMessage::SendBinaryMessage(event, message) => {
-                write!(f, "SocketIOMessage::SendBinaryMessage({}, {})", event, message)
+                write!(f, "SocketIOMessage::SendBinaryMessage({}, {:?})", event, message)
             }
             SocketIOMessage::Join(val) => write!(f, "SocketIOMessage::Join({})", val),
             SocketIOMessage::Leave(val) => write!(f, "SocketIOMessage::Leave({})", val),

@@ -65,12 +65,12 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
 ///
 /// Broadcast a binary message to all clients connected to a room.
 ///
-pub async fn broadcast_binary(room_id: &str, event: &str, message: &str) {
+pub async fn broadcast_binary(room_id: &str, event: &str, message: Vec<u8>) {
     // Send out via adapter
     if let Some(adapter) = &*ADAPTER.read().unwrap() {
         adapter.incoming(
             room_id,
-            &SocketIOMessage::SendBinaryMessage(event.to_string(), message.to_string()),
+            &SocketIOMessage::SendBinaryMessage(event.to_string(), message.clone()),
         );
     }
 
@@ -79,13 +79,13 @@ pub async fn broadcast_binary(room_id: &str, event: &str, message: &str) {
             for channel in &*channels {
                     channel.send(InternalMessage::IO(SocketIOMessage::SendBinaryMessage(
                         event.to_string(),
-                        message.to_string(),
+                        message.clone(),
                     )));
-                    debug!("Found socketid {} in room {}, sending message = {}", channel.sid(), room_id, message);
+                    debug!("Found socketid {} in room {}, sending message = {:?}", channel.sid(), room_id, message);
             }
         }
         None => {
-            trace!("Found no socketid in room {}, not sending message = {}", room_id, message);
+            trace!("Found no socketid in room {}, not sending message = {:?}", room_id, message);
         },
     }
 }
@@ -424,7 +424,8 @@ impl SocketIOWrapper {
                             let _ = self.socket.send(Message::Text(content)).await;
                         }
 
-                        SocketIOMessage::SendBinaryMessage(event, message) => {
+                        SocketIOMessage::SendBinaryMessage(_event, message) => {
+                            /*
                             self.message_number += 1;
 
                             let message = match &message[0..1] {
@@ -439,7 +440,8 @@ impl SocketIOWrapper {
                             );
 
                             let binary_content = bincode::serialize(&content).unwrap();
-                            let _ = self.socket.send(Message::Binary(binary_content)).await;
+                            */
+                            let _ = self.socket.send(Message::Binary(message)).await;
                         }
 
                         SocketIOMessage::Join(room_id) => {
