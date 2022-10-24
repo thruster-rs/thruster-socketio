@@ -62,6 +62,34 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
     }
 }
 
+///
+/// Broadcast a binary message to all clients connected to a room.
+///
+pub async fn broadcast_binary(room_id: &str, event: &str, message: Vec<u8>) {
+    // Send out via adapter
+    if let Some(adapter) = &*ADAPTER.read().unwrap() {
+        adapter.incoming(
+            room_id,
+            &SocketIOMessage::SendBinaryMessage(event.to_string(), message.clone()),
+        );
+    }
+
+    match get_sockets_for_room(room_id) {
+        Some(channels) => {
+            for channel in &*channels {
+                    channel.send(InternalMessage::IO(SocketIOMessage::SendBinaryMessage(
+                        event.to_string(),
+                        message.clone(),
+                    )));
+                    debug!("Found socketid {} in room {}, sending message = {:?}", channel.sid(), room_id, message);
+            }
+        }
+        None => {
+            trace!("Found no socketid in room {}, not sending message = {:?}", room_id, message);
+        },
+    }
+}
+
 pub fn adapter(new_adapter: impl SocketIOAdapter + 'static) {
     let mut adapter = ADAPTER.write().unwrap();
     adapter.replace(Box::new(new_adapter));
@@ -394,6 +422,10 @@ impl SocketIOWrapper {
                             );
 
                             let _ = self.socket.send(Message::Text(content)).await;
+                        }
+
+                        SocketIOMessage::SendBinaryMessage(_event, message) => {
+                            let _ = self.socket.send(Message::Binary(message)).await;
                         }
 
                         SocketIOMessage::Join(room_id) => {
