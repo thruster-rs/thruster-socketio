@@ -59,7 +59,7 @@
     <script>
       $(function () {
         var socket = io({
-          transports: ["polling"],
+          transports: ["websocket"],
         });
         $("form").submit(function () {
           socket.emit("chat message", $("#message").val());

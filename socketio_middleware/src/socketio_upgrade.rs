@@ -100,7 +100,7 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
         let accept_value = base64::encode(&accept_buffer);
 
         context = T::default();
-        context.status(101);
+        thruster::Context::status(context, 201);
         context.set("upgrade", "websocket");
         context.set("Sec-WebSocket-Accept", &accept_value);
         context.set("connection", "Upgrade");
@@ -257,7 +257,7 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
 
         context = T::default();
         if !polling_enabled {
-            context.status(400);
+            thruster::Context::status(context, 400);
             context.set_body(
                 "Polling transport disabled, but no upgrade header for websocket."
                     .as_bytes()
@@ -271,7 +271,7 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
                     .as_bytes()
                     .to_vec(),
             );
-            context.status(400);
+            thruster::Context::status(context, 400);
 
             Ok(context)
         }

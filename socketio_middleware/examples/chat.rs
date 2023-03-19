@@ -4,9 +4,8 @@ use std::pin::Pin;
 use thruster::context::basic_hyper_context::{generate_context, BasicHyperContext as Ctx};
 use thruster::context::hyper_request::HyperRequest;
 use thruster::hyper_server::HyperServer;
-use thruster::middleware::cors::cors;
 use thruster::middleware::file::get_file;
-use thruster::{async_middleware, middleware_fn};
+use thruster::{async_middleware, middleware_fn, Context};
 use thruster::{App, ThrusterServer};
 use thruster::{MiddlewareNext, MiddlewareResult};
 
@@ -61,6 +60,21 @@ pub async fn io(context: Ctx, _next: MiddlewareNext<Ctx>) -> MiddlewareResult<Ct
 async fn index(mut context: Ctx, _next: MiddlewareNext<Ctx>) -> MiddlewareResult<Ctx> {
     let content = get_file("socketio_middleware/examples/chat.html").unwrap();
     context.body = Body::from(content);
+    Ok(context)
+}
+
+#[middleware_fn]
+async fn cors(context: Ctx, next: MiddlewareNext<Ctx>) -> MiddlewareResult<Ctx> {
+    let mut context = next(context).await?;
+
+    context.set("Access-Control-Allow-Origin", "https://bridge.mydomain.com");
+    context.set("Access-Control-Allow-Headers", "*");
+    context.set(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS",
+    );
+    context.set("Access-Control-Allow-Credentials", "true");
+
     Ok(context)
 }
 
