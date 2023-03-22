@@ -5,7 +5,7 @@ use thruster::context::basic_hyper_context::{generate_context, BasicHyperContext
 use thruster::context::hyper_request::HyperRequest;
 use thruster::hyper_server::HyperServer;
 use thruster::middleware::file::get_file;
-use thruster::{async_middleware, m, middleware_fn, Context};
+use thruster::{m, middleware_fn, Context};
 use thruster::{App, ThrusterServer};
 use thruster::{MiddlewareNext, MiddlewareResult};
 
@@ -90,12 +90,12 @@ async fn main() {
     let host = env::var("HOST").unwrap_or("0.0.0.0".to_string());
     let port = env::var("PORT").unwrap_or("4321".to_string());
 
-    // tokio::spawn(async {
-    //     connect_to_pubsub("redis://127.0.0.1", "socketio-example")
-    //         .await
-    //         .expect("Could not connect to redis :(");
-    //     adapter(RedisAdapter {});
-    // });
+    tokio::spawn(async {
+        connect_to_pubsub("redis://127.0.0.1", "socketio-example")
+            .await
+            .expect("Could not connect to redis :(");
+        adapter(RedisAdapter {});
+    });
 
     let mut app = App::<HyperRequest, Ctx, ()>::create(generate_context, ())
         .middleware("/", m![cors])
