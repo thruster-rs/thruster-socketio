@@ -17,7 +17,7 @@ impl SocketIOContext for BasicHyperContext {
     }
 
     fn status(&mut self, code: u32) {
-        self.status(code);
+        self.status = code as u16;
     }
 }
 
@@ -27,6 +27,6 @@ impl<T: 'static + Send + Sync> SocketIOContext for TypedHyperContext<T> {
     }
 
     fn status(&mut self, code: u32) {
-        self.status(code);
+        self.status = code as u16;
     }
 }

@@ -1,5 +1,3 @@
-use base64;
-use crypto;
 use crypto::digest::Digest;
 use futures_util::sink::SinkExt;
 use futures_util::stream::StreamExt;
@@ -8,7 +6,6 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use thruster::{Context, MiddlewareResult};
-use tokio;
 use tokio::time::{self, Duration};
 use tokio_tungstenite::tungstenite::Message;
 
@@ -19,7 +16,7 @@ use crate::socketio::{
 };
 use crate::socketio_context::SocketIOContext;
 
-const WEBSOCKET_SEC: &'static str = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+const WEBSOCKET_SEC: &str = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -59,17 +56,14 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
     handler: fn(SocketIOSocket) -> Pin<Box<dyn Future<Output = Result<SocketIOSocket, ()>> + Send>>,
     message_capacity: usize,
 ) -> MiddlewareResult<T> {
-    let param_map = match context.route().split("?").collect::<Vec<&str>>().get(1) {
+    let param_map = match context.route().split('?').collect::<Vec<&str>>().get(1) {
         Some(val) => {
             let mut map = HashMap::new();
 
-            for el in val.split("&") {
-                let mut split = el.split("=");
+            for el in val.split('&') {
+                let mut split = el.split('=');
 
-                map.insert(
-                    split.next().unwrap_or_else(|| ""),
-                    split.next().unwrap_or_else(|| ""),
-                );
+                map.insert(split.next().unwrap_or(""), split.next().unwrap_or(""));
             }
 
             map
@@ -100,7 +94,7 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
         let accept_value = base64::encode(&accept_buffer);
 
         context = T::default();
-        thruster::Context::status(context, 201);
+        thruster::Context::status(&mut context, 101);
         context.set("upgrade", "websocket");
         context.set("Sec-WebSocket-Accept", &accept_value);
         context.set("connection", "Upgrade");
@@ -160,25 +154,21 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
             });
 
             // Keepalive in v4 is the server's responsibility.
-            match version {
-                AllowedVersions::V4 => {
-                    let keepalive_sender = sender.clone();
-                    tokio::spawn(async move {
-                        let mut interval = time::interval(Duration::from_millis(25000));
+            if let AllowedVersions::V4 = version {
+                let keepalive_sender = sender.clone();
+                tokio::spawn(async move {
+                    let mut interval = time::interval(Duration::from_millis(25000));
 
-                        loop {
-                            interval.tick().await;
+                    loop {
+                        interval.tick().await;
 
-                            let res =
-                                keepalive_sender.send(InternalMessage::WS(WSSocketMessage::Pong));
+                        let res = keepalive_sender.send(InternalMessage::WS(WSSocketMessage::Pong));
 
-                            if res.is_err() {
-                                break;
-                            }
+                        if res.is_err() {
+                            break;
                         }
-                    });
-                }
-                _ => (),
+                    }
+                });
             };
 
             let socket = SocketIOSocket::new(sid.clone(), sender.clone());
@@ -187,12 +177,10 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
                 .expect("The handler should return a socket");
 
             loop {
-                let val = msg_fut.await;
-
-                match val {
+                match msg_fut.await {
                     Some(Ok(Message::Text(ws_payload))) => {
                         // TODO(trezm): Handle errors here
-                        let _ = match ws_payload.as_ref() {
+                        match ws_payload.as_ref() {
                             SOCKETIO_PING => {
                                 let _ = sender.send(InternalMessage::WS(WSSocketMessage::Ping));
                             }
@@ -203,8 +191,11 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
                             }
                         };
                     }
+                    Some(Ok(Message::Frame(_ws_payload))) => {
+                        // TODO(trezm): Do this...
+                    }
                     Some(Ok(Message::Binary(_ws_payload))) => {
-                        // No idea what to do here, pass to the handler I guess?
+                        // TODO(trezm): Do this...
                     }
                     Some(Ok(Message::Ping(_))) => {
                         let _ = sender.send(InternalMessage::WS(WSSocketMessage::WsPing));
@@ -257,7 +248,7 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
 
         context = T::default();
         if !polling_enabled {
-            thruster::Context::status(context, 400);
+            thruster::Context::status(&mut context, 400);
             context.set_body(
                 "Polling transport disabled, but no upgrade header for websocket."
                     .as_bytes()
@@ -271,7 +262,7 @@ pub async fn handle_io_with_capacity<T: Context + SocketIOContext + Default>(
                     .as_bytes()
                     .to_vec(),
             );
-            thruster::Context::status(context, 400);
+            thruster::Context::status(&mut context, 400);
 
             Ok(context)
         }

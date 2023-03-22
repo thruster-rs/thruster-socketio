@@ -5,7 +5,7 @@ use thruster::context::basic_hyper_context::{generate_context, BasicHyperContext
 use thruster::context::hyper_request::HyperRequest;
 use thruster::hyper_server::HyperServer;
 use thruster::middleware::file::get_file;
-use thruster::{async_middleware, middleware_fn, Context};
+use thruster::{async_middleware, m, middleware_fn, Context};
 use thruster::{App, ThrusterServer};
 use thruster::{MiddlewareNext, MiddlewareResult};
 
@@ -53,6 +53,7 @@ async fn handle<'a>(mut socket: SocketIO) -> Result<SocketIO, ()> {
 
 #[middleware_fn]
 pub async fn io(context: Ctx, _next: MiddlewareNext<Ctx>) -> MiddlewareResult<Ctx> {
+    println!("Requesting IO");
     handle_io(context, handle).await
 }
 
@@ -89,19 +90,22 @@ async fn main() {
     let host = env::var("HOST").unwrap_or("0.0.0.0".to_string());
     let port = env::var("PORT").unwrap_or("4321".to_string());
 
-    tokio::spawn(async {
-        let _ = connect_to_pubsub("redis://127.0.0.1", "socketio-example")
-            .await
-            .expect("Could not connect to redis :(");
-        adapter(RedisAdapter {});
-    });
+    // tokio::spawn(async {
+    //     connect_to_pubsub("redis://127.0.0.1", "socketio-example")
+    //         .await
+    //         .expect("Could not connect to redis :(");
+    //     adapter(RedisAdapter {});
+    // });
 
-    let mut app = App::<HyperRequest, Ctx, ()>::create(generate_context, ());
-    app.use_middleware("/", async_middleware!(Ctx, [cors]));
-    app.get("/socket.io/*", async_middleware!(Ctx, [io]));
-    app.get("/", async_middleware!(Ctx, [index]));
-    app.options("/socket.io/*", async_middleware!(Ctx, [noop]));
-    let _ = HyperServer::new(app)
+    let mut app = App::<HyperRequest, Ctx, ()>::create(generate_context, ())
+        .middleware("/", m![cors])
+        .get("/socket.io/*", m![io])
+        .get("/", m![index])
+        .options("/socket.io/*", m![noop]);
+
+    app.connection_timeout = 30000;
+
+    HyperServer::new(app)
         .with_upgrades(true)
         .build(&host, port.parse::<u16>().unwrap())
         .await;

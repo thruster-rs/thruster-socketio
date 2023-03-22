@@ -104,10 +104,10 @@ pub async fn connect_to_pubsub_with_capacity(
 
     let channel_name = channel_name.to_string();
     let channel_name_outgoing = channel_name.clone();
-    let channel_name_incoming = channel_name.clone();
+    let channel_name_incoming = channel_name;
     let sending_id = generate_sid();
     let sending_id_outgoing = sending_id.clone();
-    let sending_id_incoming = sending_id.clone();
+    let sending_id_incoming = sending_id;
 
     // Handle pubbing local requests into redis
     tokio::spawn(async move {
@@ -169,16 +169,13 @@ pub async fn connect_to_pubsub_with_capacity(
             );
 
             if message.sending_id != sending_id_incoming {
-                match get_sockets_for_room(&message.room_id) {
-                    Some(sockets) => {
-                        for socket in &*sockets {
-                            socket.send(InternalMessage::IO(SocketIOMessage::SendMessage(
-                                message.event.to_string(),
-                                message.message.to_string(),
-                            )));
-                        }
+                if let Some(sockets) = get_sockets_for_room(&message.room_id) {
+                    for socket in &*sockets {
+                        socket.send(InternalMessage::IO(SocketIOMessage::SendMessage(
+                            message.event.to_string(),
+                            message.message.to_string(),
+                        )));
                     }
-                    None => (),
                 };
             }
         }

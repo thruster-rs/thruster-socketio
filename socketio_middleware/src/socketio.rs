@@ -6,7 +6,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use futures::stream::FuturesUnordered;
 use futures_util::sink::SinkExt;
 use futures_util::stream::SplitSink;
-use log::{trace, debug, info};
+use log::{debug, info, trace};
 use std::boxed::Box;
 use std::collections::HashMap;
 use std::fmt;
@@ -25,10 +25,10 @@ use crate::socketio_message::SocketIOMessage;
 pub type SocketIOHandler =
     fn(SocketIOSocket, String) -> Pin<Box<dyn Future<Output = Result<(), ()>> + Send>>;
 
-pub const SOCKETIO_PING: &'static str = "2";
-pub const SOCKETIO_PONG: &'static str = "3";
-pub const SOCKETIO_EVENT_OPEN: &'static str = "40"; // Message, then open
-pub const SOCKETIO_EVENT_MESSAGE: &'static str = "42"; // Message, then event
+pub const SOCKETIO_PING: &str = "2";
+pub const SOCKETIO_PONG: &str = "3";
+pub const SOCKETIO_EVENT_OPEN: &str = "40"; // Message, then open
+pub const SOCKETIO_EVENT_MESSAGE: &str = "42"; // Message, then event
 
 lazy_static! {
     static ref ADAPTER: RwLock<Option<Box<dyn SocketIOAdapter>>> = RwLock::new(None);
@@ -49,16 +49,25 @@ pub async fn broadcast(room_id: &str, event: &str, message: &str) {
     match get_sockets_for_room(room_id) {
         Some(channels) => {
             for channel in &*channels {
-                    channel.send(InternalMessage::IO(SocketIOMessage::SendMessage(
-                        event.to_string(),
-                        message.to_string(),
-                    )));
-                    debug!("Found socketid {} in room {}, sending message = {}", channel.sid(), room_id, message);
+                channel.send(InternalMessage::IO(SocketIOMessage::SendMessage(
+                    event.to_string(),
+                    message.to_string(),
+                )));
+                debug!(
+                    "Found socketid {} in room {}, sending message = {}",
+                    channel.sid(),
+                    room_id,
+                    message
+                );
             }
         }
         None => {
-            trace!("Found no socketid in room {}, not sending message = {}", room_id, message);
-        },
+            trace!(
+                "Found no socketid in room {}, not sending message = {}",
+                room_id,
+                message
+            );
+        }
     }
 }
 
@@ -77,16 +86,25 @@ pub async fn broadcast_binary(room_id: &str, event: &str, message: Vec<u8>) {
     match get_sockets_for_room(room_id) {
         Some(channels) => {
             for channel in &*channels {
-                    channel.send(InternalMessage::IO(SocketIOMessage::SendBinaryMessage(
-                        event.to_string(),
-                        message.clone(),
-                    )));
-                    debug!("Found socketid {} in room {}, sending message = {:?}", channel.sid(), room_id, message);
+                channel.send(InternalMessage::IO(SocketIOMessage::SendBinaryMessage(
+                    event.to_string(),
+                    message.clone(),
+                )));
+                debug!(
+                    "Found socketid {} in room {}, sending message = {:?}",
+                    channel.sid(),
+                    room_id,
+                    message
+                );
             }
         }
         None => {
-            trace!("Found no socketid in room {}, not sending message = {:?}", room_id, message);
-        },
+            trace!(
+                "Found no socketid in room {}, not sending message = {:?}",
+                room_id,
+                message
+            );
+        }
     }
 }
 
@@ -98,9 +116,9 @@ pub fn adapter(new_adapter: impl SocketIOAdapter + 'static) {
 pub fn parse_raw_message(payload: &str) -> (String, String) {
     let message = &payload[2..];
     let leading_bracket = message
-        .find("[")
+        .find('[')
         .unwrap_or_else(|| panic!("Found a message with no leading bracket: '{}'", message));
-    let event_split = message.find(",").unwrap_or_else(|| {
+    let event_split = message.find(',').unwrap_or_else(|| {
         panic!(
             "Received a message without a comma separator: '{}'",
             message
@@ -234,16 +252,13 @@ impl SocketIOSocket {
             );
         }
 
-        match get_sockets_for_room(room_id) {
-            Some(channels) => {
-                for channel in &*channels {
-                    channel.send(InternalMessage::IO(SocketIOMessage::SendMessage(
-                        event.to_string(),
-                        message.to_string(),
-                    )));
-                }
+        if let Some(channels) = get_sockets_for_room(room_id) {
+            for channel in &*channels {
+                channel.send(InternalMessage::IO(SocketIOMessage::SendMessage(
+                    event.to_string(),
+                    message.to_string(),
+                )));
             }
-            None => (),
         }
     }
 
@@ -260,18 +275,15 @@ impl SocketIOSocket {
             );
         }
 
-        match get_sockets_for_room(room_id) {
-            Some(channels) => {
-                for channel in &*channels {
-                    if channel.sid() != &self.id {
-                        channel.send(InternalMessage::IO(SocketIOMessage::SendMessage(
-                            event.to_string(),
-                            message.to_string(),
-                        )));
-                    }
+        if let Some(channels) = get_sockets_for_room(room_id) {
+            for channel in &*channels {
+                if channel.sid() != self.id {
+                    channel.send(InternalMessage::IO(SocketIOMessage::SendMessage(
+                        event.to_string(),
+                        message.to_string(),
+                    )));
                 }
             }
-            None => (),
         }
     }
 
@@ -336,8 +348,11 @@ impl SocketIOWrapper {
     pub async fn close(mut self) {
         // remove the socket from all joined rooms
         for room in &self.rooms {
-            remove_socket_from_room(&room, &self.sid);
-            debug!("SocketIOMessage socketid {} closed, leave room {}", self.sid, room);                            
+            remove_socket_from_room(room, &self.sid);
+            debug!(
+                "SocketIOMessage socketid {} closed, leave room {}",
+                self.sid, room
+            );
         }
 
         let _res = self.socket.close().await;
@@ -360,7 +375,7 @@ impl SocketIOWrapper {
 
         match &payload[0..2] {
             "42" => {
-                if payload.len() > 0 {
+                if !payload.is_empty() {
                     let (event, message) = parse_raw_message(&payload);
 
                     // Run handlers
@@ -432,7 +447,7 @@ impl SocketIOWrapper {
                             // check if room_id exist. Don't use return because of the following process such as PING/PONG.
                             if !self.rooms.contains(&room_id) {
                                 self.rooms.push(room_id.to_string());
-                                debug!("SocketIOMessage socketid {} joined room {}. Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
+                                debug!("SocketIOMessage socketid {} joined room {}. Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());
 
                                 //Call rooms::join_channel_to_room
                                 join_channel_to_room(
@@ -445,26 +460,21 @@ impl SocketIOWrapper {
                         }
 
                         SocketIOMessage::Leave(room_id) => {
-                            let mut i = 0;
-                            for room in &self.rooms {
+                            for (i, room) in self.rooms.iter().enumerate() {
                                 if room == &room_id {
                                     self.rooms.remove(i);
-                                    debug!("SocketIOMessage socketid {} leaved room {}. Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());                            
+                                    debug!("SocketIOMessage socketid {} leaved room {}. Rooms = {:?}, rooms len = {}", self.sid, room_id, self.rooms, self.rooms.len());
 
                                     //Call rooms::remove_socket_from_room
                                     remove_socket_from_room(&room_id, &self.sid);
                                     break;
                                 }
-
-                                i = i + 1;
                             }
                         }
 
                         SocketIOMessage::AddListener(event, handler) => {
-                            let mut existing_handlers = self
-                                .event_handlers
-                                .remove(&event)
-                                .unwrap_or_else(|| Vec::new());
+                            let mut existing_handlers =
+                                self.event_handlers.remove(&event).unwrap_or_default();
 
                             existing_handlers.push(handler);
 
@@ -499,7 +509,7 @@ impl SocketIOWrapper {
                         self.close().await;
                         return;
                     }
-                }
+                },
             }
         }
     }

@@ -1,5 +1,5 @@
 use chashmap::{CHashMap, ReadGuard};
-use log::{debug};
+use log::debug;
 
 use crate::socketio::InternalMessage;
 
@@ -46,14 +46,23 @@ pub fn join_channel_to_room(room_id: &str, channel_pair: ChannelPair) {
     let mut exist = false;
     for socket in &connected_sockets {
         if socket.sid() == channel_pair.sid() {
-            debug!("ROOMS: socketid {} doesn't join room {}, this socketid already exist in the room.", channel_pair.sid(), room_id);
+            debug!(
+                "ROOMS: socketid {} doesn't join room {}, this socketid already exist in the room.",
+                channel_pair.sid(),
+                room_id
+            );
             exist = true;
             break;
         }
     }
 
     if !exist {
-        debug!("ROOMS: socketid {} joined room {}, room len = {}.", channel_pair.sid(), room_id, connected_sockets.len() + 1);
+        debug!(
+            "ROOMS: socketid {} joined room {}, room len = {}.",
+            channel_pair.sid(),
+            room_id,
+            connected_sockets.len() + 1
+        );
         connected_sockets.push(channel_pair);
     }
     ROOMS.insert(room_id.to_string(), connected_sockets);
@@ -71,14 +80,23 @@ pub fn remove_socket_from_room(room_id: &str, sid: &str) {
 
         if socket.sid == sid {
             connected_sockets.remove(i);
-            debug!("ROOMS: socketid {} leave room {}, room len = {}.", sid, room_id, connected_sockets.len());
+            debug!(
+                "ROOMS: socketid {} leave room {}, room len = {}.",
+                sid,
+                room_id,
+                connected_sockets.len()
+            );
             break;
         }
     }
 
     //if there are still exist sockets, then insert back to ROOMS.
-    if connected_sockets.len() > 0 {
-        debug!("ROOMS: {} sockets insert back into ROOMS {}.", connected_sockets.len(), room_id);
+    if !connected_sockets.is_empty() {
+        debug!(
+            "ROOMS: {} sockets insert back into ROOMS {}.",
+            connected_sockets.len(),
+            room_id
+        );
         ROOMS.insert(room_id.to_string(), connected_sockets);
     }
 }
@@ -91,7 +109,10 @@ pub fn get_sockets_for_room(room_id: &str) -> Option<ReadGuard<String, Vec<Chann
 /// get sockets number for room
 ///
 pub fn get_sockets_number_for_room(room_id: &str) -> usize {
-    ROOMS.get(room_id).map(|channels| channels.len()).unwrap_or(0)
+    ROOMS
+        .get(room_id)
+        .map(|channels| channels.len())
+        .unwrap_or(0)
 }
 
 ///
@@ -100,7 +121,11 @@ pub fn get_sockets_number_for_room(room_id: &str) -> usize {
 pub fn print_sockets_for_room(room_id: &str) {
     match ROOMS.get(room_id) {
         Some(sockets) => {
-            debug!("ROOMS: room {} containt sockets number = {}.", room_id, sockets.len());
+            debug!(
+                "ROOMS: room {} containt sockets number = {}.",
+                room_id,
+                sockets.len()
+            );
             /*
             for socket in &*sockets {
                 debug!("ROOMS: room {} containted socketid {}, sockets number = {}.", room_id, socket.sid(), sockets.len());
@@ -120,4 +145,3 @@ pub fn print_sockets_for_room(room_id: &str) {
 pub fn get_rooms_count() -> usize {
     ROOMS.len()
 }
-    
